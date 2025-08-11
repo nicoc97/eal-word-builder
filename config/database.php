@@ -15,10 +15,10 @@
 
 return [
     // Database connection settings
-    'host' => 'localhost',
-    'database' => 'word_builder_game',
-    'username' => 'root',
-    'password' => '', // Set appropriate password for production
+    'host' => $_ENV['DB_HOST'] ?? 'localhost',
+    'database' => $_ENV['DB_DATABASE'] ?? 'word_builder_game',
+    'username' => $_ENV['DB_USERNAME'] ?? 'root',
+    'password' => $_ENV['DB_PASSWORD'] ?? '',
     'charset' => 'utf8mb4',
     
     // Connection options for performance and security
