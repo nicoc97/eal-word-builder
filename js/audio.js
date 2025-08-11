@@ -82,11 +82,6 @@ class AudioManager {
             }
         }
 
-        console.log('AudioManager initialized:', {
-            speechSupported: this.speechSupported,
-            webAudioSupported: this.webAudioSupported,
-            voicesAvailable: this.speechSupported ? speechSynthesis.getVoices().length : 0
-        });
     }
 
     /**

@@ -829,4 +829,191 @@ class TeacherManager {
             'learning_indicators' => []
         ];
     }
+    
+    /**
+     * Delete a specific student session and all associated data
+     * 
+     * @param string $sessionId Session ID to delete
+     * @return array Result with success status and message
+     */
+    public function deleteStudent($sessionId) {
+        try {
+            // Validate session ID
+            if (empty($sessionId) || !is_string($sessionId)) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid session ID'
+                ];
+            }
+            
+            // Check if session exists
+            $checkQuery = "SELECT session_id, student_name FROM sessions WHERE session_id = ?";
+            $session = $this->db->fetchRow($checkQuery, [$sessionId]);
+            
+            if (!$session) {
+                return [
+                    'success' => false,
+                    'error' => 'Student session not found'
+                ];
+            }
+            
+            $studentName = $session['student_name'];
+            
+            // Begin transaction for safe deletion
+            $this->db->beginTransaction();
+            
+            try {
+                // Delete word attempts first (foreign key constraint)
+                $deleteAttemptsQuery = "DELETE FROM word_attempts WHERE session_id = ?";
+                $attemptsDeleted = $this->db->delete($deleteAttemptsQuery, [$sessionId]);
+                
+                // Delete progress records
+                $deleteProgressQuery = "DELETE FROM progress WHERE session_id = ?";
+                $progressDeleted = $this->db->delete($deleteProgressQuery, [$sessionId]);
+                
+                // Delete session record
+                $deleteSessionQuery = "DELETE FROM sessions WHERE session_id = ?";
+                $sessionDeleted = $this->db->delete($deleteSessionQuery, [$sessionId]);
+                
+                // Commit transaction
+                $this->db->commit();
+                
+                return [
+                    'success' => true,
+                    'message' => "Student '{$studentName}' and all associated data deleted successfully",
+                    'deleted_session_id' => $sessionId
+                ];
+                
+            } catch (Exception $e) {
+                // Rollback transaction on error
+                $this->db->rollback();
+                throw $e;
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error deleting student session {$sessionId}: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Failed to delete student session: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Delete all student sessions and associated data
+     * 
+     * @return array Result with success status and message
+     */
+    public function deleteAllStudents() {
+        try {
+            // Get count of sessions before deletion
+            $countQuery = "SELECT COUNT(*) as session_count FROM sessions";
+            $result = $this->db->fetchRow($countQuery);
+            $sessionCount = $result['session_count'];
+            
+            if ($sessionCount == 0) {
+                return [
+                    'success' => true,
+                    'message' => 'No student sessions to delete',
+                    'deleted_count' => 0
+                ];
+            }
+            
+            // Begin transaction for safe deletion
+            $this->db->beginTransaction();
+            
+            try {
+                // Delete all word attempts first (foreign key constraint)
+                $deleteAttemptsQuery = "DELETE FROM word_attempts";
+                $attemptsDeleted = $this->db->delete($deleteAttemptsQuery);
+                
+                // Delete all progress records
+                $deleteProgressQuery = "DELETE FROM progress";
+                $progressDeleted = $this->db->delete($deleteProgressQuery);
+                
+                // Delete all sessions
+                $deleteSessionsQuery = "DELETE FROM sessions";
+                $sessionsDeleted = $this->db->delete($deleteSessionsQuery);
+                
+                // Reset auto-increment counters for clean slate
+                $resetTables = ['sessions', 'progress', 'word_attempts'];
+                foreach ($resetTables as $table) {
+                    $resetQuery = "ALTER TABLE {$table} AUTO_INCREMENT = 1";
+                    $this->db->execute($resetQuery);
+                }
+                
+                // Commit transaction
+                $this->db->commit();
+                
+                return [
+                    'success' => true,
+                    'message' => "All {$sessionCount} student sessions and associated data deleted successfully",
+                    'deleted_count' => $sessionCount
+                ];
+                
+            } catch (Exception $e) {
+                // Rollback transaction on error
+                $this->db->rollback();
+                throw $e;
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error deleting all student sessions: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Failed to delete all student sessions: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Delete multiple student sessions by IDs
+     * 
+     * @param array $sessionIds Array of session IDs to delete
+     * @return array Result with success status and detailed results
+     */
+    public function deleteMultipleStudents($sessionIds) {
+        try {
+            if (empty($sessionIds) || !is_array($sessionIds)) {
+                return [
+                    'success' => false,
+                    'error' => 'No session IDs provided'
+                ];
+            }
+            
+            $results = [];
+            $successCount = 0;
+            $failCount = 0;
+            
+            foreach ($sessionIds as $sessionId) {
+                $result = $this->deleteStudent($sessionId);
+                $results[] = [
+                    'session_id' => $sessionId,
+                    'success' => $result['success'],
+                    'message' => $result['success'] ? $result['message'] : $result['error']
+                ];
+                
+                if ($result['success']) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                }
+            }
+            
+            return [
+                'success' => $failCount === 0,
+                'message' => "Deleted {$successCount} sessions, {$failCount} failed",
+                'deleted_count' => $successCount,
+                'failed_count' => $failCount,
+                'details' => $results
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error deleting multiple student sessions: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Failed to delete multiple sessions: ' . $e->getMessage()
+            ];
+        }
+    }
 }

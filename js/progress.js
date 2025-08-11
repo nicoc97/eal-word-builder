@@ -46,6 +46,7 @@ class ProgressTracker {
         this.syncRetryCount = 0;
         this.maxRetries = 3;
         this.syncInterval = null;
+        this.scheduledSyncTimeout = null;
 
         /**
          * PROGRESS DATA STRUCTURE
@@ -153,6 +154,85 @@ class ProgressTracker {
     }
 
     /**
+     * Load a specific session for selected student from landing page
+     * 
+     * This method forces the ProgressTracker to use a specific session ID
+     * and loads the associated progress data from server/local storage.
+     */
+    async loadSpecificSession(sessionId) {
+        if (!sessionId) {
+            console.warn('loadSpecificSession called with empty session ID');
+            return;
+        }
+
+        console.log('Loading specific session:', sessionId);
+        
+        try {
+            // Set the session ID immediately
+            this.sessionId = sessionId;
+            this.data.sessionId = sessionId;
+            
+            // Try to load progress for this specific session from server
+            if (this.isOnline) {
+                try {
+                    // Add timeout to prevent hanging
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
+                    
+                    const response = await fetch(`${this.getApiBaseUrl()}progress/${sessionId}`, {
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.ok) {
+                        const serverData = await response.json();
+                        if (serverData && serverData.sessionId === sessionId) {
+                            this.data = { ...this.data, ...this.transformDataFromAPI(serverData) };
+                            this.saveToLocal(); // Save to local storage
+                            console.log('Loaded specific session from server:', sessionId);
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        console.warn('Session load timed out, falling back to local storage');
+                    } else {
+                        console.warn('Failed to load specific session from server:', error);
+                    }
+                }
+            }
+            
+            // Fallback: Check if we have this session in local storage
+            const savedData = localStorage.getItem('wordBuilderProgress');
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                if (parsed.sessionId === sessionId && this.validateProgressData(parsed)) {
+                    this.data = { ...this.data, ...parsed };
+                    console.log('Loaded specific session from local storage:', sessionId);
+                    return;
+                }
+            }
+            
+            // If we can't find the session, keep the ID but reset progress
+            console.log('Session not found, starting with fresh progress for session:', sessionId);
+            this.data = {
+                ...this.data,
+                sessionId: sessionId,
+                level: 1,
+                score: 0,
+                wordsCompleted: 0,
+                timeStarted: new Date().toISOString(),
+                lastPlayed: new Date().toISOString()
+            };
+            this.saveToLocal();
+            
+        } catch (error) {
+            console.error('Error loading specific session:', error);
+        }
+    }
+
+    /**
      * Generate unique session ID
      */
     generateSessionId() {
@@ -160,6 +240,18 @@ class ProgressTracker {
         const shortTimestamp = Date.now().toString(36);
         const randomPart = Math.random().toString(36).substring(2, 8);
         return 'session_' + shortTimestamp + '_' + randomPart;
+    }
+
+    /**
+     * Get the correct API base URL based on current location
+     */
+    getApiBaseUrl() {
+        // If we're running on localhost:8000, use relative path
+        if (window.location.port === '8000' || window.location.href.includes('localhost:8000')) {
+            return 'api/';
+        }
+        // If we're on a different port or host, construct the full URL
+        return `http://localhost:8000/api/`;
     }
 
     /**
@@ -291,6 +383,11 @@ class ProgressTracker {
      * Update progress data
      */
     updateProgress(updates) {
+        console.log('🔄 ProgressTracker.updateProgress called with:', updates);
+        console.log('Current session ID:', this.sessionId);
+        console.log('Is online?', this.isOnline);
+        console.log('Sync in progress?', this.syncInProgress);
+        
         // Validate updates
         if (!updates || typeof updates !== 'object') {
             console.warn('Invalid progress updates provided');
@@ -302,21 +399,35 @@ class ProgressTracker {
         this.data.lastPlayed = new Date().toISOString();
         this.data.needsSync = true;
 
+        console.log('📈 Updated progress data:', this.data);
+
         // Save locally immediately
         this.saveToLocal();
+        console.log('💾 Saved to local storage');
 
-        // Attempt server sync if online
+        // Schedule server sync instead of immediate sync to prevent data conflicts
         if (this.isOnline && !this.syncInProgress) {
-            this.syncWithServer();
+            console.log('🌐 Scheduling server sync in 2 seconds...');
+            clearTimeout(this.scheduledSyncTimeout);
+            this.scheduledSyncTimeout = setTimeout(() => {
+                if (this.isOnline && !this.syncInProgress) {
+                    console.log('⏰ Executing scheduled server sync...');
+                    this.syncWithServer();
+                }
+            }, 2000);
+        } else {
+            console.log('⏸️ Server sync skipped - online:', this.isOnline, 'syncInProgress:', this.syncInProgress);
         }
 
-        console.log('Progress updated:', updates);
+        console.log('✅ Progress update completed');
     }
 
     /**
      * Record a word attempt for detailed analytics
      */
     recordWordAttempt(word, level, success, timeTaken = 0, errorPattern = null, userInput = '') {
+        console.log('📝 ProgressTracker.recordWordAttempt called:', {word, level, success, timeTaken});
+        
         const attempt = {
             word,
             level,
@@ -334,41 +445,80 @@ class ProgressTracker {
             this.data.correctAttempts++;
             this.data.currentStreak++;
             this.data.bestStreak = Math.max(this.data.bestStreak, this.data.currentStreak);
+            this.data.wordsCompleted++;
+            console.log('✅ Word attempt successful - words completed:', this.data.wordsCompleted);
         } else {
             this.data.currentStreak = 0;
         }
 
         // Calculate accuracy
         this.data.accuracy = (this.data.correctAttempts / this.data.totalAttempts) * 100;
+        
+        console.log('📊 Updated progress stats:', {
+            totalAttempts: this.data.totalAttempts,
+            correctAttempts: this.data.correctAttempts,
+            accuracy: this.data.accuracy,
+            currentStreak: this.data.currentStreak,
+            bestStreak: this.data.bestStreak
+        });
 
         // Keep only last 100 attempts to prevent storage bloat
         if (this.data.wordAttempts.length > 100) {
             this.data.wordAttempts = this.data.wordAttempts.slice(-100);
         }
 
-        this.updateProgress({});
+        // Calculate time spent if we have a timeStarted
+        let timeSpent = this.data.timeSpent || 0;
+        if (this.data.timeStarted) {
+            const sessionTime = Math.floor((new Date() - new Date(this.data.timeStarted)) / 1000);
+            timeSpent = Math.max(timeSpent, sessionTime);
+            console.log('⏰ Session time calculated:', sessionTime, 'seconds');
+        }
+
+        // Update progress with current calculated values
+        this.updateProgress({
+            totalAttempts: this.data.totalAttempts,
+            correctAttempts: this.data.correctAttempts,
+            accuracy: this.data.accuracy,
+            currentStreak: this.data.currentStreak,
+            bestStreak: this.data.bestStreak,
+            timeSpent: timeSpent
+        });
     }
 
     /**
      * Sync progress with server
      */
     async syncWithServer() {
+        console.log('🔄 syncWithServer called');
+        console.log('Conditions - syncInProgress:', this.syncInProgress, 'isOnline:', this.isOnline, 'initInProgress:', this.initInProgress);
+        
         if (this.syncInProgress || !this.isOnline || this.initInProgress) {
+            console.log('❌ Sync skipped due to conditions');
             return;
         }
 
         this.syncInProgress = true;
         this.lastSyncAttempt = new Date().toISOString();
+        
+        console.log('🚀 Starting sync process...');
+        console.log('Data to sync:', this.data);
 
         try {
             // First, try to get server data
+            console.log('📡 Fetching server progress...');
             const serverData = await this.fetchServerProgress();
+            console.log('📥 Server data received:', serverData);
 
             // Merge local and server data
+            console.log('🔀 Merging local and server data...');
             const mergedData = this.mergeProgressData(this.data, serverData);
+            console.log('🔀 Merged data:', mergedData);
 
             // Save merged data to server
+            console.log('📤 Saving merged data to server...');
             await this.saveToServer(mergedData);
+            console.log('✅ Data saved to server successfully');
 
             // Update local data
             this.data = mergedData;
@@ -378,14 +528,14 @@ class ProgressTracker {
             // Reset retry count on success
             this.syncRetryCount = 0;
 
-            console.log('Progress synced successfully');
-            this.showNetworkStatus('Progress synced!', 'success', 2000);
+            console.log('🎉 Progress synced successfully');
 
         } catch (error) {
-            console.error('Sync failed:', error);
+            console.error('💥 Sync failed:', error);
             this.handleSyncError(error);
         } finally {
             this.syncInProgress = false;
+            console.log('🏁 Sync process completed');
         }
     }
 
@@ -397,7 +547,7 @@ class ProgressTracker {
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for Railway
 
         try {
-            const response = await fetch(`api/progress/${this.sessionId}`, {
+            const response = await fetch(`${this.getApiBaseUrl()}progress/${this.sessionId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -438,8 +588,11 @@ class ProgressTracker {
             total_attempts: data.totalAttempts || 0,
             correct_attempts: data.correctAttempts || 0,
             time_spent: data.timeSpent || 0,
-            current_streak: data.currentStreak || 0
+            current_streak: data.currentStreak || 0,
+            best_streak: data.bestStreak || 0
         };
+        
+        console.log('📤 Transforming data for API:', apiData);
 
         // Include the most recent word attempt if available
         if (data.wordAttempts && data.wordAttempts.length > 0) {
@@ -527,7 +680,7 @@ class ProgressTracker {
             // Transform data to match API expectations
             const apiData = this.transformDataForAPI(data);
             
-            const response = await fetch('api/progress', {
+            const response = await fetch(`${this.getApiBaseUrl()}progress`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -561,22 +714,43 @@ class ProgressTracker {
      * Merge local and server progress data
      */
     mergeProgressData(localData, serverData) {
+        console.log('🔀 mergeProgressData called');
+        console.log('📥 Local data:', localData);
+        console.log('📤 Server data:', serverData);
+        
         if (!serverData || Object.keys(serverData).length === 0) {
+            console.log('📝 No server data - using local data');
             return localData;
         }
 
         // Use the data with the most recent lastPlayed timestamp
         const localTime = new Date(localData.lastPlayed || 0);
-        const serverTime = new Date(serverData.lastPlayed || 0);
+        const serverTime = new Date(serverData.lastPlayed || serverData.last_played || 0);
+        
+        console.log('🕐 Local time:', localTime);
+        console.log('🕐 Server time:', serverTime);
+        console.log('🕐 Local is newer?', localTime > serverTime);
 
         let mergedData;
-        if (localTime > serverTime) {
-            // Local data is newer
+        
+        // Always prioritize local data if it has more progress
+        const localHasMoreProgress = (
+            (localData.wordsCompleted || 0) > (serverData.wordsCompleted || 0) ||
+            (localData.score || 0) > (serverData.score || 0) ||
+            (localData.totalAttempts || 0) > (serverData.totalAttempts || 0)
+        );
+        
+        if (localHasMoreProgress || localTime > serverTime) {
+            // Local data is newer or has more progress - prioritize local data
+            console.log('✅ Using local data as primary (newer or more progress)');
             mergedData = { ...serverData, ...localData };
         } else {
-            // Server data is newer or equal
+            // Server data is newer and has equal/more progress - use server data
+            console.log('⚠️ Using server data as primary (newer with equal/more progress)');
             mergedData = { ...localData, ...serverData };
         }
+        
+        console.log('🔀 Merged result:', mergedData);
 
         // Merge word attempts arrays
         if (localData.wordAttempts && serverData.wordAttempts) {

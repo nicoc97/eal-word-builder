@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Showcase - Word Builder</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .showcase-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .showcase-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 2rem;
+        }
+        
+        .showcase-section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .showcase-section h2 {
+            color: #2c3e50;
+            border-left: 4px solid #3498db;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .skill-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid #27ae60;
+        }
+        
+        .skill-card h3 {
+            color: #27ae60;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .feature-list li::before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .code-highlight {
+            background: #f1f3f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .back-button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .honest-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Word Builder</a>
+    
+    <div class="app-container">
+        <div class="showcase-container">
+            <div class="showcase-header">
+                <h1>Word Builder: A Weekend Project</h1>
+                <p style="font-size: 1.1em; color: #6c757d; margin-top: 1rem;">
+                    How I spent my weekend building a small web app to demonstrate the exact tech stack you're looking for
+                </p>
+            </div>
+
+            <div class="showcase-section">
+                <h2>What This Actually Is</h2>
+                <p>When I saw your job posting mentioning PHP, JavaScript, and educational applications, I thought since my portfolio site is a little anemic at the moment I'll build something that relates to this work.</p>
+                
+                <div class="honest-note">
+                    <strong>Full transparency:</strong> This isn't a massive production app—it's a focused demonstration of the specific skills you mentioned in your job listing. I built it in a couple of days specifically to show how I approach the kind of work you're doing at Across Cultures.
+                </div>
+                
+                <p>Word Builder is a simple English learning game where students build words from letter tiles. Teachers can create accounts, add their students, and track progress. It's straightforward, but it covers all the technical bases you mentioned in your requirements.</p>
+            </div>
+
+            <div class="showcase-section">
+                <h2>What I Built (And How)</h2>
+                <div class="skills-grid">
+                    <div class="skill-card">
+                        <h3>PHP Backend</h3>
+                        <ul class="feature-list">
+                            <li>Simple class-based structure for managing teachers and students</li>
+                            <li>Basic API endpoints for the game functionality</li>
+                            <li>Progress tracking that stores to the database</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="skill-card">
+                        <h3>MySQL Database</h3>
+                        <ul class="feature-list">
+                            <li>Simple tables for teachers, students, and game results</li>
+                            <li>Setup script so you can actually run this locally</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="skill-card">
+                        <h3>JavaScript Frontend</h3>
+                        <ul class="feature-list">
+                            <li>Drag-and-drop letter tiles</li>
+                            <li>Works on phones and tablets</li>
+                            <li>Shows progress in real-time</li>
+                            <li>Some fun sound effects because why not?</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="skill-card">
+                        <h3>Educational Approach</h3>
+                        <ul class="feature-list">
+                            <li>Made it colourful and engaging for young learners</li>
+                            <li>Different difficulty levels (3-letter to 5-letter words)</li>
+                            <li>Teacher dashboard to see how students are doing</li>
+                            <li>Tried to make it actually useful for EAL learners</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="showcase-section">
+                <h2>Why I Built This for You</h2>
+                
+                <p>Your job posting was really specific about needing PHP/MySQL backend experience with JavaScript frontend skills, particularly for educational applications.</p>
+
+                <h3>Technical Bits That Match Your Requirements</h3>
+                <ul class="feature-list">
+                    <li><strong>PHP/MySQL:</strong> Built the whole backend from scratch - teacher management, student tracking, results storage (exactly the kind of work you mentioned)</li>
+                    <li><strong>JavaScript:</strong> Interactive game mechanics that actually feel responsive and fun</li>
+                    <li><strong>Educational focus:</strong> Designed specifically for English language learning, with EAL pedagogy in mind</li>
+                    <li><strong>Modular architecture:</strong> Organised into clean classes that could easily slot into a larger codebase like yours</li>
+                </ul>
+
+                <h3>How I Approached the Development</h3>
+                <ul class="feature-list">
+                    <li>Started with the database structure (always do the data model first!)</li>
+                    <li>Built separate PHP classes for different concerns - makes it easier to work on teams</li>
+                    <li>Created a proper API structure so frontend and backend stay cleanly separated</li>
+                    <li>Made the JavaScript modular too - UIManager, AudioManager, ProgressTracker classes</li>
+                    <li>Added comprehensive error handling because real applications need to handle edge cases</li>
+                </ul>
+            </div>
+
+            <div class="showcase-section">
+                <h2>What This Shows About How I Work</h2>
+                <ul class="feature-list">
+                    <li><strong>I think about the end users:</strong> Made it work well for both teachers and students, considering the EAL learning context</li>
+                    <li><strong>I finish projects:</strong> It's not just a proof-of-concept - it actually works end-to-end with proper error handling</li>
+                    <li><strong>I plan for the long term:</strong> The modular structure means it could easily be extended or integrated into a larger platform</li>
+                    <li><strong>I document my work:</strong> Because working across time zones requires clear communication and handoffs</li>
+                </ul>
+            </div>
+
+            <div class="showcase-section">
+                <h2>The Educational Side</h2>
+                <p>Since you're specifically working on EAL applications, I tried to think about what actually helps English language learners (and researched a bit of EAL pedagogy while building this):</p>
+                <ul class="feature-list">
+                    <li>Visual word building (seeing letters combine into words) - supports phonemic awareness</li>
+                    <li>Immediate, gentle feedback when they get words right or wrong</li>
+                    <li>CVC word patterns (cat, dog, pen) which are fundamental for new English learners</li>
+                    <li>Progress tracking that identifies error patterns, not just success rates</li>
+                    <li>Different difficulty levels that progress logically through language acquisition stages</li>
+                    <li>Touch-friendly interface because many EAL learners are using tablets</li>
+                </ul>
+            </div>
+
+            <div class="showcase-section">
+                <h2>Why This Matters for Your Role</h2>
+                <p>This little project shows I can work with your exact tech stack (PHP, JavaScript, MySQL) and that I understand educational applications. More importantly, it shows how I approach problems when I'm thinking about building something that could be part of a larger system.</p>
+                
+                <p>I know the Learning Village is a much more sophisticated platform with 100k+ lines of code, but the fundamentals are the same: building tools that help teachers support their students, tracking meaningful progress, and creating engaging learning experiences.</p>
+
+                <div class="honest-note">
+                    <strong>Bottom line:</strong> I built this over a weekend to show you exactly how I work with the technologies you use every day, and how I think about code that needs to work well with other developers and larger systems. It's not going to change the world, but it demonstrates the kind of thoughtful development approach you need for long-term projects!
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

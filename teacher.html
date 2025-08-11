@@ -16,11 +16,14 @@
             <div class="header-content">
                 <h1 class="dashboard-title">Teacher Dashboard</h1>
                 <div class="header-controls">
-                    <button class="btn btn-secondary" id="back-to-game-btn" aria-label="Back to game">
-                        Back to Game
+                    <button class="btn btn-secondary" id="back-to-game-btn" aria-label="Back to landing page">
+                        Back to Landing
                     </button>
                     <button class="btn btn-primary" id="new-session-btn" aria-label="Create new student session">
                         New Student
+                    </button>
+                    <button class="btn btn-danger" id="delete-all-btn" aria-label="Delete all student sessions" style="margin-left: 20px;">
+                        Delete All Students
                     </button>
                 </div>
             </div>
@@ -123,6 +126,54 @@
                         <button type="submit" class="btn btn-primary">Create Session</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Delete Student Confirmation Modal -->
+        <div class="modal-overlay" id="delete-student-modal" role="dialog" aria-modal="true" aria-labelledby="delete-student-title">
+            <div class="modal-content">
+                <h2 id="delete-student-title" class="modal-title">Delete Student</h2>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="delete-student-name"></strong>?</p>
+                    <p class="warning-text">⚠️ This will permanently delete:</p>
+                    <ul class="warning-list">
+                        <li>All game progress and statistics</li>
+                        <li>Word attempt history and error patterns</li>
+                        <li>All associated data</li>
+                    </ul>
+                    <p><strong>This action cannot be undone.</strong></p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-delete-student-btn">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-student-btn">Delete Student</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete All Students Confirmation Modal -->
+        <div class="modal-overlay" id="delete-all-modal" role="dialog" aria-modal="true" aria-labelledby="delete-all-title">
+            <div class="modal-content">
+                <h2 id="delete-all-title" class="modal-title">Delete All Students</h2>
+                <div class="modal-body">
+                    <p>⚠️ <strong>CAUTION:</strong> You are about to delete <strong>ALL</strong> student sessions.</p>
+                    <p class="warning-text">This will permanently delete:</p>
+                    <ul class="warning-list">
+                        <li>All student accounts and progress</li>
+                        <li>All game statistics and analytics</li>
+                        <li>All word attempt histories</li>
+                        <li>All error pattern data</li>
+                        <li>Everything in your teacher dashboard</li>
+                    </ul>
+                    <p><strong>This action cannot be undone and will reset your entire database.</strong></p>
+                    <div class="confirmation-input">
+                        <label for="delete-all-confirmation">Type "DELETE ALL" to confirm:</label>
+                        <input type="text" id="delete-all-confirmation" class="form-input" placeholder="DELETE ALL">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-delete-all-btn">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-all-btn" disabled>Delete All Students</button>
+                </div>
             </div>
         </div>
 

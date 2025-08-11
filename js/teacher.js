@@ -44,9 +44,22 @@ class TeacherDashboard {
         this.sessions = [];
         this.currentSession = null;
         this.currentView = 'overview';
-        this.apiBaseUrl = 'api/';
+        // Fix: Auto-detect the correct API base URL
+        this.apiBaseUrl = this.detectApiBaseUrl();
         this.refreshInterval = null;
         this.init();
+    }
+
+    /**
+     * Detect the correct API base URL based on current location
+     */
+    detectApiBaseUrl() {
+        // If we're running on localhost:8000, use relative path
+        if (window.location.port === '8000' || window.location.href.includes('localhost:8000')) {
+            return 'api/';
+        }
+        // If we're on a different port or host, construct the full URL
+        return `http://localhost:8000/api/`;
     }
 
     init() {
@@ -68,6 +81,10 @@ class TeacherDashboard {
         const backToOverviewBtn = document.getElementById('back-to-overview-btn');
 
         if (backToGameBtn) {
+            // Update button text to reflect landing page navigation
+            backToGameBtn.textContent = 'Back to Landing';
+            backToGameBtn.title = 'Return to landing page';
+            
             backToGameBtn.addEventListener('click', () => {
                 window.location.href = 'index.html';
             });
@@ -82,6 +99,14 @@ class TeacherDashboard {
         if (backToOverviewBtn) {
             backToOverviewBtn.addEventListener('click', () => {
                 this.showSessionsOverview();
+            });
+        }
+
+        // Delete buttons
+        const deleteAllBtn = document.getElementById('delete-all-btn');
+        if (deleteAllBtn) {
+            deleteAllBtn.addEventListener('click', () => {
+                this.confirmDeleteAllStudents();
             });
         }
 
@@ -101,6 +126,46 @@ class TeacherDashboard {
                 this.createNewSession();
             });
         }
+
+        // Delete modal handlers
+        const cancelDeleteStudentBtn = document.getElementById('cancel-delete-student-btn');
+        const confirmDeleteStudentBtn = document.getElementById('confirm-delete-student-btn');
+        const cancelDeleteAllBtn = document.getElementById('cancel-delete-all-btn');
+        const confirmDeleteAllBtn = document.getElementById('confirm-delete-all-btn');
+        const deleteAllConfirmationInput = document.getElementById('delete-all-confirmation');
+
+        if (cancelDeleteStudentBtn) {
+            cancelDeleteStudentBtn.addEventListener('click', () => {
+                this.hideDeleteStudentModal();
+            });
+        }
+
+        if (confirmDeleteStudentBtn) {
+            confirmDeleteStudentBtn.addEventListener('click', () => {
+                this.deleteStudent();
+            });
+        }
+
+        if (cancelDeleteAllBtn) {
+            cancelDeleteAllBtn.addEventListener('click', () => {
+                this.hideDeleteAllModal();
+            });
+        }
+
+        if (confirmDeleteAllBtn) {
+            confirmDeleteAllBtn.addEventListener('click', () => {
+                this.deleteAllStudents();
+            });
+        }
+
+        if (deleteAllConfirmationInput) {
+            deleteAllConfirmationInput.addEventListener('input', (e) => {
+                const confirmBtn = document.getElementById('confirm-delete-all-btn');
+                if (confirmBtn) {
+                    confirmBtn.disabled = e.target.value !== 'DELETE ALL';
+                }
+            });
+        }
     }
 
     /**
@@ -111,6 +176,7 @@ class TeacherDashboard {
         try {
             this.showLoading(true);
             
+            console.log('TeacherDashboard: Loading sessions from:', `${this.apiBaseUrl}teacher/sessions`);
             const response = await fetch(`${this.apiBaseUrl}teacher/sessions`);
             
             if (!response.ok) {
@@ -120,7 +186,9 @@ class TeacherDashboard {
             const data = await response.json();
             
             if (data.success) {
-                this.sessions = Array.isArray(data.data) ? data.data : [];
+                this.sessions = Array.isArray(data.data.sessions) ? data.data.sessions : [];
+                console.log('TeacherDashboard: Raw API response:', data);
+                console.log('TeacherDashboard: Extracted sessions:', this.sessions);
                 this.updateSessionsDisplay();
                 this.updateStats();
                 console.log(`Loaded ${this.sessions.length} sessions from API`);
@@ -364,7 +432,7 @@ class TeacherDashboard {
 
         const lastPlayed = new Date(session.last_active || session.lastPlayed).toLocaleDateString();
         const timeSpent = Math.round((session.total_time_spent || session.totalTime || 0) / 60);
-        const accuracy = session.accuracy || 0;
+        const accuracy = (session.accuracy || 0) * 100; // Convert from decimal to percentage
         const studentName = session.student_name || session.studentName;
 
         // Activity status indicator
@@ -387,7 +455,7 @@ class TeacherDashboard {
                 </div>
                 <div class="info-row">
                     <span class="info-label">Accuracy:</span>
-                    <span class="info-value">${Math.round(accuracy * 100)}%</span>
+                    <span class="info-value">${Math.round(accuracy)}%</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Best Streak:</span>
@@ -405,6 +473,9 @@ class TeacherDashboard {
             <div class="session-actions">
                 <button class="btn btn-small btn-primary" onclick="event.stopPropagation(); window.teacherDashboard.viewSessionProgressEnhanced('${session.session_id || session.id}')">
                     View Details
+                </button>
+                <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); window.teacherDashboard.confirmDeleteStudent('${session.session_id || session.id}', '${studentName}')">
+                    Delete
                 </button>
             </div>
         `;
@@ -588,9 +659,39 @@ class TeacherDashboard {
             return;
         }
         
+        console.log('📊 updateDetailView called with:', sessionData);
+        
         const sessionInfo = sessionData.session_info || {};
-        const progressData = sessionData.progress_data || {};
+        const progressRecords = sessionData.progress || [];
         const analytics = sessionData.analytics || {};
+
+        console.log('📈 Progress records:', progressRecords);
+
+        // Calculate totals from all progress records
+        let totalWordsCompleted = 0;
+        let totalAttempts = 0;
+        let totalCorrectAttempts = 0;
+        let totalTimeSpent = 0;
+        let currentLevel = 1;
+        let bestStreak = 0;
+
+        progressRecords.forEach(record => {
+            totalWordsCompleted += record.words_completed || 0;
+            totalAttempts += record.total_attempts || 0;
+            totalCorrectAttempts += record.correct_attempts || 0;
+            totalTimeSpent += record.time_spent || 0;
+            currentLevel = Math.max(currentLevel, record.level || 1);
+            bestStreak = Math.max(bestStreak, record.best_streak || 0);
+        });
+
+        console.log('📊 Calculated totals:', {
+            totalWordsCompleted,
+            totalAttempts,
+            totalCorrectAttempts,
+            totalTimeSpent,
+            currentLevel,
+            bestStreak
+        });
 
         // Update header
         const titleElement = document.getElementById('student-name-title');
@@ -605,26 +706,30 @@ class TeacherDashboard {
         const timeElement = document.getElementById('detail-time');
 
         if (levelElement) {
-            levelElement.textContent = progressData.current_level || 1;
+            levelElement.textContent = currentLevel;
+            console.log('✅ Updated level to:', currentLevel);
         }
         
         if (wordsElement) {
-            wordsElement.textContent = progressData.total_words_completed || 0;
+            wordsElement.textContent = totalWordsCompleted;
+            console.log('✅ Updated words completed to:', totalWordsCompleted);
         }
         
         if (accuracyElement) {
-            const accuracy = progressData.total_attempts > 0 ? 
-                Math.round((progressData.correct_attempts / progressData.total_attempts) * 100) : 0;
+            const accuracy = totalAttempts > 0 ? 
+                Math.round((totalCorrectAttempts / totalAttempts) * 100) : 0;
             accuracyElement.textContent = `${accuracy}%`;
+            console.log('✅ Updated accuracy to:', `${accuracy}%`);
         }
         
         if (timeElement) {
-            const minutes = Math.round((progressData.total_time_spent || 0) / 60);
+            const minutes = Math.round(totalTimeSpent / 60);
             timeElement.textContent = `${minutes} min`;
+            console.log('✅ Updated time to:', `${minutes} min`);
         }
 
         // Update progress chart placeholder with analytics
-        this.updateProgressChart(analytics);
+        this.updateProgressChart(analytics, { totalWordsCompleted, totalAttempts, totalCorrectAttempts, currentLevel, bestStreak });
     }
 
     /**
@@ -742,11 +847,8 @@ class TeacherDashboard {
      * Show loading overlay
      */
     showLoading(show = true) {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) {
-            loadingOverlay.style.display = show ? 'flex' : 'none';
-            loadingOverlay.setAttribute('aria-hidden', !show);
-        }
+        // Loading overlay disabled
+        return;
     }
 
     /**
@@ -1192,6 +1294,218 @@ class TeacherDashboard {
             printReportBtn.onclick = () => {
                 this.generatePrintableReport(sessionId, 'printable');
             };
+        }
+    }
+
+    /**
+     * Confirm delete individual student
+     */
+    confirmDeleteStudent(sessionId, studentName) {
+        this.pendingDeleteSessionId = sessionId;
+        this.pendingDeleteStudentName = studentName;
+        
+        const modal = document.getElementById('delete-student-modal');
+        const nameElement = document.getElementById('delete-student-name');
+        
+        if (modal && nameElement) {
+            nameElement.textContent = studentName;
+            modal.classList.add('show');
+        }
+    }
+
+    /**
+     * Hide delete student modal
+     */
+    hideDeleteStudentModal() {
+        const modal = document.getElementById('delete-student-modal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+        this.pendingDeleteSessionId = null;
+        this.pendingDeleteStudentName = null;
+    }
+
+    /**
+     * Delete individual student
+     */
+    async deleteStudent() {
+        if (!this.pendingDeleteSessionId) {
+            console.error('No student selected for deletion');
+            return;
+        }
+
+        try {
+            this.showLoading(true);
+            
+            const response = await fetch(`${this.apiBaseUrl}teacher/delete/${this.pendingDeleteSessionId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Show success message
+                if (window.FrontendErrorHandler) {
+                    window.FrontendErrorHandler.showUserFriendlyError(
+                        'Student deleted',
+                        `${this.pendingDeleteStudentName} has been permanently deleted.`,
+                        'success',
+                        3000
+                    );
+                } else {
+                    this.showMessage(`Student ${this.pendingDeleteStudentName} deleted successfully!`, 'success');
+                }
+
+                // Hide modal and refresh sessions
+                this.hideDeleteStudentModal();
+                await this.loadAllSessions();
+                
+            } else {
+                throw new Error(result.error || 'Failed to delete student');
+            }
+
+        } catch (error) {
+            console.error('Failed to delete student:', error);
+            
+            if (window.FrontendErrorHandler) {
+                window.FrontendErrorHandler.showUserFriendlyError(
+                    'Delete failed',
+                    error.message,
+                    'error'
+                );
+            } else {
+                this.showError('Failed to delete student: ' + error.message);
+            }
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    /**
+     * Confirm delete all students
+     */
+    confirmDeleteAllStudents() {
+        const modal = document.getElementById('delete-all-modal');
+        const confirmationInput = document.getElementById('delete-all-confirmation');
+        const confirmBtn = document.getElementById('confirm-delete-all-btn');
+        
+        if (modal) {
+            // Reset confirmation input
+            if (confirmationInput) {
+                confirmationInput.value = '';
+            }
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+            }
+            
+            modal.classList.add('show');
+            
+            // Focus the confirmation input
+            setTimeout(() => {
+                if (confirmationInput) {
+                    confirmationInput.focus();
+                }
+            }, 100);
+        }
+    }
+
+    /**
+     * Hide delete all modal
+     */
+    hideDeleteAllModal() {
+        const modal = document.getElementById('delete-all-modal');
+        const confirmationInput = document.getElementById('delete-all-confirmation');
+        const confirmBtn = document.getElementById('confirm-delete-all-btn');
+        
+        if (modal) {
+            modal.classList.remove('show');
+        }
+        
+        // Reset form
+        if (confirmationInput) {
+            confirmationInput.value = '';
+        }
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+        }
+    }
+
+    /**
+     * Delete all students
+     */
+    async deleteAllStudents() {
+        const confirmationInput = document.getElementById('delete-all-confirmation');
+        
+        if (confirmationInput && confirmationInput.value !== 'DELETE ALL') {
+            if (window.FrontendErrorHandler) {
+                window.FrontendErrorHandler.showUserFriendlyError(
+                    'Confirmation required',
+                    'Please type "DELETE ALL" to confirm this action.',
+                    'warning'
+                );
+            }
+            return;
+        }
+
+        try {
+            this.showLoading(true);
+            
+            const response = await fetch(`${this.apiBaseUrl}teacher/delete-all`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Show success message
+                const deletedCount = result.data.deleted_count || 0;
+                if (window.FrontendErrorHandler) {
+                    window.FrontendErrorHandler.showUserFriendlyError(
+                        'All students deleted',
+                        `Successfully deleted ${deletedCount} student sessions and all associated data.`,
+                        'success',
+                        4000
+                    );
+                } else {
+                    this.showMessage(`All students deleted successfully! (${deletedCount} sessions removed)`, 'success');
+                }
+
+                // Hide modal and refresh sessions
+                this.hideDeleteAllModal();
+                await this.loadAllSessions();
+                
+            } else {
+                throw new Error(result.error || 'Failed to delete all students');
+            }
+
+        } catch (error) {
+            console.error('Failed to delete all students:', error);
+            
+            if (window.FrontendErrorHandler) {
+                window.FrontendErrorHandler.showUserFriendlyError(
+                    'Delete all failed',
+                    error.message,
+                    'error'
+                );
+            } else {
+                this.showError('Failed to delete all students: ' + error.message);
+            }
+        } finally {
+            this.showLoading(false);
         }
     }
 

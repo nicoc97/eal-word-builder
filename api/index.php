@@ -169,6 +169,28 @@ if (isset($_GET['endpoint']) && !defined('PROCESSING_LEGACY')) {
  *   }
  * }
  * 
+ * DELETE /api/teacher/delete/{sessionId}
+ * Purpose: Delete individual student session and all associated data
+ * Response: {
+ *   "success": true,
+ *   "message": "Student 'Jane Smith' and all associated data deleted successfully",
+ *   "data": {
+ *     "deleted_session_id": "session_456"
+ *   }
+ * }
+ * Error Codes: 400 (Invalid session ID), 404 (Session not found), 500 (Server error)
+ * 
+ * DELETE /api/teacher/delete-all
+ * Purpose: Delete all student sessions and associated data (CAUTION: Irreversible)
+ * Response: {
+ *   "success": true,
+ *   "message": "All 25 student sessions and associated data deleted successfully",
+ *   "data": {
+ *     "deleted_count": 25
+ *   }
+ * }
+ * Error Codes: 500 (Server error)
+ * 
  * GET /api/teacher/errors/{sessionId}
  * Purpose: Get error pattern analysis for pedagogical insights
  * Response: {
@@ -245,6 +267,7 @@ require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/ProgressManager.php';
 require_once __DIR__ . '/../classes/WordManager.php';
 require_once __DIR__ . '/../classes/ErrorHandler.php';
+require_once __DIR__ . '/../classes/TeacherManager.php';
 
 // Initialize error handler
 $errorHandler = ErrorHandler::getInstance();
@@ -703,6 +726,12 @@ class APIRouter {
             case 'session':
                 $this->handleTeacherSession();
                 break;
+            case 'delete':
+                $this->handleTeacherDelete();
+                break;
+            case 'delete-all':
+                $this->handleTeacherDeleteAll();
+                break;
             case 'errors':
                 $this->handleTeacherErrors();
                 break;
@@ -992,33 +1021,9 @@ class APIRouter {
         }
         
         try {
-            $db = Database::getInstance();
-            
-            // Get all sessions with basic progress info
-            $query = "
-                SELECT 
-                    s.session_id,
-                    s.student_name,
-                    s.created_at,
-                    s.last_active,
-                    COALESCE(MAX(p.level), 1) as current_level,
-                    COALESCE(SUM(p.words_completed), 0) as total_words_completed,
-                    COALESCE(AVG(p.correct_attempts / NULLIF(p.total_attempts, 0)), 0) as average_accuracy
-                FROM sessions s
-                LEFT JOIN progress p ON s.session_id = p.session_id
-                GROUP BY s.session_id, s.student_name, s.created_at, s.last_active
-                ORDER BY s.last_active DESC
-            ";
-            
-            $sessions = $db->fetchAll($query);
-            
-            // Format the data
-            foreach ($sessions as &$session) {
-                $session['current_level'] = (int) $session['current_level'];
-                $session['total_words_completed'] = (int) $session['total_words_completed'];
-                $session['average_accuracy'] = round((float) $session['average_accuracy'], 2);
-                $session['is_active'] = (strtotime($session['last_active']) > strtotime('-1 hour'));
-            }
+            // Use TeacherManager for comprehensive session data
+            $teacherManager = new TeacherManager();
+            $sessions = $teacherManager->getAllSessions();
             
             APIResponse::success([
                 'total_sessions' => count($sessions),
@@ -1026,7 +1031,10 @@ class APIRouter {
             ]);
             
         } catch (Exception $e) {
-            APIResponse::error('Failed to load sessions', 500);
+            $this->errorHandler->logError('Failed to get teacher sessions', [
+                'error' => $e->getMessage()
+            ]);
+            APIResponse::serverError('Unable to retrieve sessions');
         }
     }
     
@@ -1135,6 +1143,66 @@ class APIRouter {
             
         } catch (Exception $e) {
             APIResponse::error('Failed to create session', 500);
+        }
+    }
+    
+    /**
+     * Handle teacher delete student endpoint
+     * DELETE /api/teacher/delete/{sessionId} - Delete individual student session
+     */
+    private function handleTeacherDelete() {
+        if ($this->method !== 'DELETE') {
+            APIResponse::error('Method not allowed', 405);
+        }
+        
+        if (count($this->pathSegments) < 3) {
+            APIResponse::error('Session ID is required', 400);
+        }
+        
+        $sessionId = $this->pathSegments[2];
+        
+        if (!$this->isValidSessionId($sessionId)) {
+            APIResponse::error('Invalid session ID format', 400);
+        }
+        
+        try {
+            $teacherManager = new TeacherManager();
+            
+            $result = $teacherManager->deleteStudent($sessionId);
+            
+            if ($result['success']) {
+                APIResponse::success($result, 200, $result['message']);
+            } else {
+                APIResponse::error($result['error'], 400);
+            }
+            
+        } catch (Exception $e) {
+            APIResponse::error('Failed to delete student session', 500);
+        }
+    }
+    
+    /**
+     * Handle teacher delete all students endpoint
+     * DELETE /api/teacher/delete-all - Delete all student sessions
+     */
+    private function handleTeacherDeleteAll() {
+        if ($this->method !== 'DELETE') {
+            APIResponse::error('Method not allowed', 405);
+        }
+        
+        try {
+            $teacherManager = new TeacherManager();
+            
+            $result = $teacherManager->deleteAllStudents();
+            
+            if ($result['success']) {
+                APIResponse::success($result, 200, $result['message']);
+            } else {
+                APIResponse::error($result['error'], 400);
+            }
+            
+        } catch (Exception $e) {
+            APIResponse::error('Failed to delete all student sessions', 500);
         }
     }
     

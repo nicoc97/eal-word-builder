@@ -373,22 +373,11 @@ class UIManager {
     }
 
     /**
-     * Show loading state with spinner
+     * Show loading state with spinner - DISABLED
      */
     showLoading(show, message = 'Loading...') {
-        const overlay = document.getElementById('loading-overlay');
-        const loadingText = overlay?.querySelector('.loading-text');
-        
-        if (overlay) {
-            if (show) {
-                if (loadingText) loadingText.textContent = message;
-                overlay.classList.add('show');
-                overlay.setAttribute('aria-hidden', 'false');
-            } else {
-                overlay.classList.remove('show');
-                overlay.setAttribute('aria-hidden', 'true');
-            }
-        }
+        // Loading overlay disabled
+        return;
     }
 
     /**

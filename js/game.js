@@ -159,10 +159,26 @@ class WordBuilderGame {
             await this.loadOrCreateSession();
 
             // Load first word
+            console.log('🎮 Loading initial level:', this.currentLevel);
             await this.loadLevel(this.currentLevel);
 
+            console.log('🎯 Setting game state to playing');
             this.gameState = 'playing';
             this.showLoading(false);
+            
+            console.log('🎉 Game initialization completed successfully');
+            console.log('🎮 Game ready - Session ID:', this.sessionId);
+            console.log('🎯 Current level:', this.currentLevel);
+            console.log('📊 Initial stats - Score:', this.score, 'Words completed:', this.wordsCompleted);
+            
+            // Debug ProgressTracker status
+            console.log('🔧 ProgressTracker status:');
+            console.log('  - Available:', !!window.ProgressTracker);
+            if (window.ProgressTracker) {
+                console.log('  - Session ID:', window.ProgressTracker.sessionId);
+                console.log('  - Is online:', window.ProgressTracker.isOnline);
+                console.log('  - Current data:', window.ProgressTracker.data);
+            }
             
             // Clear the timeout since we succeeded
             clearTimeout(initTimeout);
@@ -262,6 +278,18 @@ class WordBuilderGame {
     }
 
     /**
+     * Get the correct API base URL based on current location
+     */
+    getApiBaseUrl() {
+        // If we're running on localhost:8000, use relative path
+        if (window.location.port === '8000' || window.location.href.includes('localhost:8000')) {
+            return 'api/';
+        }
+        // If we're on a different port or host, construct the full URL
+        return `http://localhost:8000/api/`;
+    }
+
+    /**
      * Load existing session or create a new one
      * 
      * SESSION LOADING STRATEGY - FIXED:
@@ -279,6 +307,34 @@ class WordBuilderGame {
      */
     async loadOrCreateSession() {
         try {
+            /**
+             * CHECK FOR SELECTED SESSION FROM LANDING PAGE
+             * 
+             * If user came from landing page with a selected student profile,
+             * use that session ID and load their progress
+             */
+            const landingSession = sessionStorage.getItem('wordbuilder_current_session');
+            if (landingSession) {
+                try {
+                    const sessionData = JSON.parse(landingSession);
+                    console.log('Loading selected student session from landing page:', sessionData);
+                    
+                    // Set up back button to return to landing page
+                    this.setupBackToLandingButton(sessionData.studentName);
+                    
+                    // Force ProgressTracker to use this specific session
+                    if (window.ProgressTracker) {
+                        await window.ProgressTracker.loadSpecificSession(sessionData.sessionId);
+                    }
+                    
+                    // Clear the session storage since we've used it
+                    sessionStorage.removeItem('wordbuilder_current_session');
+                } catch (error) {
+                    console.warn('Error parsing landing page session data:', error);
+                    sessionStorage.removeItem('wordbuilder_current_session');
+                }
+            }
+
             /**
              * PRIMARY SESSION SOURCE: ProgressTracker
              * 
@@ -402,25 +458,51 @@ class WordBuilderGame {
             }
 
             // Load word data for the level with timeout protection
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            console.log(`Loading level ${level} from API:`, this.getApiBaseUrl() + `words/${level}`);
             
-            const response = await fetch(`api/words/${level}`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                console.error('API request timed out after 5 seconds');
+                controller.abort();
+            }, 5000); // 5 second timeout
+            
+            let response;
+            try {
+                response = await fetch(`${this.getApiBaseUrl()}words/${level}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                console.log('API response received:', response.status);
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out - please check your internet connection');
+                }
+                throw new Error(`Network error: ${error.message}`);
+            }
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: Failed to load words`);
+                const errorText = await response.text().catch(() => 'Unknown error');
+                console.error(`API error ${response.status}:`, errorText);
+                throw new Error(`HTTP ${response.status}: Failed to load words - ${errorText}`);
             }
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+                console.log('API data received:', data);
+            } catch (error) {
+                throw new Error('Invalid response format from server');
+            }
+            
             if (!data.success) {
                 throw new Error(data.error || 'Failed to load words');
             }
 
             this.levelWords = data.data.words || [];
             this.currentLevel = level;
+            
+            console.log(`Level ${level} loaded with ${this.levelWords.length} words`);
 
             // Update UI
             this.updateLevelDisplay();
@@ -706,21 +788,28 @@ class WordBuilderGame {
      * Place a letter in a slot
      */
     placeLetter(slot, letter) {
+        console.log('🔤 placeLetter called - slot:', slot, 'letter:', letter);
+        
         if (slot.textContent) {
             // Slot is occupied, return the letter to available tiles
+            console.log('📤 Returning existing letter to tiles:', slot.textContent);
             this.returnLetterToTiles(slot.textContent.toLowerCase());
         }
 
         slot.textContent = letter.toUpperCase();
         slot.classList.add('filled');
+        
+        console.log('✅ Letter placed in slot:', letter.toUpperCase());
 
         // Remove the letter from available tiles
         if (this.draggedElement) {
             this.draggedElement.classList.add('used');
             this.draggedElement.draggable = false;
+            console.log('🚫 Dragged element marked as used');
         }
 
         // Check if word is complete
+        console.log('🔍 Triggering word completion check...');
         this.checkWordCompletion();
     }
 
@@ -775,14 +864,20 @@ class WordBuilderGame {
         const isComplete = this.wordSlots.every(slot => slot.textContent);
         const checkBtn = document.getElementById('check-word-btn');
 
+        console.log('🔍 checkWordCompletion called - isComplete:', isComplete);
+        console.log('🎯 Current word:', this.currentWord);
+        console.log('🎮 Game state:', this.gameState);
+        
         if (checkBtn) {
             checkBtn.disabled = !isComplete;
         }
 
         if (isComplete) {
+            console.log('✅ Word is complete - scheduling check in 500ms');
             // Auto-check after a short delay for better UX
             setTimeout(() => {
                 if (this.gameState === 'playing') {
+                    console.log('⏰ Auto-check timeout triggered');
                     this.checkWord();
                 }
             }, 500);
@@ -793,15 +888,26 @@ class WordBuilderGame {
      * Check if the current word is correct
      */
     checkWord() {
-        if (this.gameState !== 'playing') return;
+        console.log('🔍 checkWord called - Game state:', this.gameState);
+        
+        if (this.gameState !== 'playing') {
+            console.log('❌ checkWord aborted - game state not playing');
+            return;
+        }
 
         this.gameState = 'checking';
         const userWord = this.wordSlots.map(slot => slot.textContent.toLowerCase()).join('');
         const isCorrect = userWord === this.currentWord;
+        
+        console.log('🔤 User word:', userWord);
+        console.log('🎯 Expected word:', this.currentWord);
+        console.log('✅ Is correct?', isCorrect);
 
         if (isCorrect) {
+            console.log('🎉 Word is correct - calling handleCorrectWord');
             this.handleCorrectWord();
         } else {
+            console.log('❌ Word is incorrect - calling handleIncorrectWord');
             this.handleIncorrectWord();
         }
     }
@@ -839,8 +945,10 @@ class WordBuilderGame {
 
         this.score += 10;
         this.wordsCompleted++;
+        console.log('🎯 handleCorrectWord - Score:', this.score, 'Words completed:', this.wordsCompleted);
 
         // Record the successful attempt
+        console.log('📝 Recording word attempt for:', this.currentWord);
         this.recordWordAttempt(this.currentWord, true, timeTaken, null, this.currentWord);
 
         // Play success sound effect
@@ -858,7 +966,20 @@ class WordBuilderGame {
 
         // Update progress
         this.updateProgressDisplay();
-        await this.saveProgress();
+        console.log('🎯 Word completed successfully - saving progress...');
+        console.log('Progress data before save:', {
+            level: this.currentLevel,
+            score: this.score,
+            wordsCompleted: this.wordsCompleted,
+            sessionId: this.sessionId
+        });
+        
+        try {
+            await this.saveProgress();
+            console.log('✅ Progress saved successfully');
+        } catch (error) {
+            console.error('❌ Failed to save progress:', error);
+        }
 
         // Remove current word from available words
         this.levelWords = this.levelWords.filter(word => word.word !== this.currentWord);
@@ -1044,6 +1165,8 @@ class WordBuilderGame {
     async completeLevel() {
         this.currentLevel++;
         this.wordsCompleted = 0;
+        
+        console.log('🎉 Level completed! New level:', this.currentLevel);
 
         // Play level up sound
         if (window.AudioManager) {
@@ -1051,6 +1174,15 @@ class WordBuilderGame {
         }
 
         this.showFeedback('Level Complete!', `Congratulations! You've completed Level ${this.currentLevel - 1}!`, 'success');
+
+        // Save level progression
+        console.log('💾 Saving level progression...');
+        try {
+            await this.saveProgress();
+            console.log('✅ Level progression saved');
+        } catch (error) {
+            console.error('❌ Failed to save level progression:', error);
+        }
 
         // Load next level
         setTimeout(async () => {
@@ -1138,12 +1270,16 @@ class WordBuilderGame {
      * Show/hide loading overlay
      */
     showLoading(show) {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
             if (show) {
-                overlay.classList.add('show');
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.setAttribute('aria-hidden', 'false');
+                console.log('Loading overlay shown');
             } else {
-                overlay.classList.remove('show');
+                loadingOverlay.style.display = 'none';
+                loadingOverlay.setAttribute('aria-hidden', 'true');
+                console.log('Loading overlay hidden');
             }
         }
     }
@@ -1181,6 +1317,10 @@ class WordBuilderGame {
      * Save progress using the enhanced ProgressTracker
      */
     async saveProgress() {
+        console.log('💾 saveProgress method called');
+        console.log('ProgressTracker available?', !!window.ProgressTracker);
+        console.log('Session ID:', this.sessionId);
+        
         try {
             const progressData = {
                 level: this.currentLevel,
@@ -1189,6 +1329,8 @@ class WordBuilderGame {
                 accuracy: this.calculateAccuracy(),
                 timeSpent: this.calculateTimeSpent()
             };
+            
+            console.log('📊 Progress data to save:', progressData);
 
             // Validate progress data
             if (this.errorHandler) {
@@ -1221,7 +1363,7 @@ class WordBuilderGame {
                 localStorage.setItem('wordBuilderSession', JSON.stringify(fullProgressData));
 
                 try {
-                    const response = await fetch('api/progress', {
+                    const response = await fetch(`${this.getApiBaseUrl()}progress`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1240,15 +1382,6 @@ class WordBuilderGame {
                 } catch (error) {
                     console.warn('Could not save progress to server:', error);
 
-                    // Show gentle notification about offline saving
-                    if (this.errorHandler) {
-                        this.errorHandler.showUserFriendlyError(
-                            'Progress saved locally',
-                            'Will sync when connection improves.',
-                            'info',
-                            2000
-                        );
-                    }
                 }
             }
         } catch (error) {
@@ -1296,9 +1429,12 @@ class WordBuilderGame {
     calculateTimeSpent() {
         if (!this.gameStartTime) {
             this.gameStartTime = Date.now();
+            console.log('⏰ Game start time initialized:', this.gameStartTime);
             return 0;
         }
-        return Math.floor((Date.now() - this.gameStartTime) / 1000);
+        const timeSpent = Math.floor((Date.now() - this.gameStartTime) / 1000);
+        console.log('⏰ Time spent calculated:', timeSpent, 'seconds');
+        return timeSpent;
     }
 
     /**
@@ -1396,6 +1532,26 @@ class WordBuilderGame {
     }
 
     /**
+     * Set up back to landing page button for selected student sessions
+     */
+    setupBackToLandingButton(studentName) {
+        const teacherBtn = document.getElementById('teacher-btn');
+        if (teacherBtn) {
+            // Update button text and functionality
+            teacherBtn.textContent = '← Back to Landing';
+            teacherBtn.title = `Return to landing page (playing as ${studentName})`;
+            
+            // Remove existing event listeners and add new one
+            const newBtn = teacherBtn.cloneNode(true);
+            teacherBtn.parentNode.replaceChild(newBtn, teacherBtn);
+            
+            newBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+    }
+
+    /**
      * Set up settings modal event listeners
      */
     setupSettingsEventListeners() {
@@ -1410,7 +1566,6 @@ class WordBuilderGame {
         const speechVolume = document.getElementById('speech-volume');
         const effectsVolume = document.getElementById('effects-volume');
         const speechRate = document.getElementById('speech-rate');
-        const voiceSelect = document.getElementById('voice-select');
 
         // Close modal handlers
         if (settingsCloseBtn) {
@@ -1489,13 +1644,6 @@ class WordBuilderGame {
             });
         }
 
-        if (voiceSelect) {
-            voiceSelect.addEventListener('change', (e) => {
-                if (window.AudioManager) {
-                    window.AudioManager.setPreferredVoice(e.target.value);
-                }
-            });
-        }
     }
 
     /**
@@ -1534,7 +1682,6 @@ class WordBuilderGame {
         const speechVolume = document.getElementById('speech-volume');
         const effectsVolume = document.getElementById('effects-volume');
         const speechRate = document.getElementById('speech-rate');
-        const voiceSelect = document.getElementById('voice-select');
 
         if (audioEnabled) audioEnabled.checked = prefs.isEnabled;
         if (masterVolume) {
@@ -1562,20 +1709,6 @@ class WordBuilderGame {
             document.getElementById('speech-rate-value').textContent = label;
         }
 
-        // Populate voice options
-        if (voiceSelect) {
-            voiceSelect.innerHTML = '<option value="">Default</option>';
-            const voices = window.AudioManager.getAvailableVoices();
-            voices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                if (voice.name === prefs.preferredVoice) {
-                    option.selected = true;
-                }
-                voiceSelect.appendChild(option);
-            });
-        }
     }
 
     /**
@@ -1585,8 +1718,6 @@ class WordBuilderGame {
         // Settings are saved automatically as they change
         this.closeSettings();
 
-        // Show confirmation
-        this.showMessage('Settings saved!', 'success', 2000);
     }
 
     /**
@@ -1616,9 +1747,11 @@ class WordBuilderGame {
             if (show) {
                 loadingOverlay.style.display = 'flex';
                 loadingOverlay.setAttribute('aria-hidden', 'false');
+                console.log('Loading overlay shown');
             } else {
                 loadingOverlay.style.display = 'none';
                 loadingOverlay.setAttribute('aria-hidden', 'true');
+                console.log('Loading overlay hidden');
             }
         }
     }
