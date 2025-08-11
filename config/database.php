@@ -15,10 +15,10 @@
 
 return [
     // Database connection settings
-    'host' => $_ENV['DB_HOST'] ?? 'localhost',
-    'database' => $_ENV['DB_DATABASE'] ?? 'word_builder_game',
-    'username' => $_ENV['DB_USERNAME'] ?? 'root',
-    'password' => $_ENV['DB_PASSWORD'] ?? '',
+    'host' => getenv('DB_HOST') ?: (getenv('MYSQL_HOST') ?: 'localhost'),
+    'database' => getenv('DB_DATABASE') ?: (getenv('MYSQL_DATABASE') ?: 'word_builder_game'),
+    'username' => getenv('DB_USERNAME') ?: (getenv('MYSQL_USER') ?: 'root'),
+    'password' => getenv('DB_PASSWORD') ?: (getenv('MYSQL_PASSWORD') ?: ''),
     'charset' => 'utf8mb4',
     
     // Connection options for performance and security
