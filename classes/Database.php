@@ -50,14 +50,19 @@ class Database {
     
     /**
      * Load database configuration from environment or config file
-     * Supports both environment variables and fallback defaults for development
+     * Updated to support Railway.app's MYSQL_ environment variables
      */
     private function loadConfig() {
-        // Load from environment variables (production)
-        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
-        $this->database = $_ENV['DB_NAME'] ?? 'word_builder_game';
-        $this->username = $_ENV['DB_USER'] ?? 'root';
-        $this->password = $_ENV['DB_PASS'] ?? '';
+        // Load from Railway.app environment variables (MYSQL_*) with fallbacks to standard DB_* variables
+        $this->host = $_ENV['MYSQL_HOST'] ?? $_ENV['DB_HOST'] ?? 'localhost';
+        $this->database = $_ENV['MYSQL_DATABASE'] ?? $_ENV['DB_NAME'] ?? $_ENV['DB_DATABASE'] ?? 'word_builder_game';
+        $this->username = $_ENV['MYSQL_USER'] ?? $_ENV['DB_USER'] ?? $_ENV['DB_USERNAME'] ?? 'root';
+        $this->password = $_ENV['MYSQL_PASSWORD'] ?? $_ENV['DB_PASS'] ?? $_ENV['DB_PASSWORD'] ?? '';
+        
+        // Handle port - Railway typically uses 3306
+        $port = $_ENV['MYSQL_PORT'] ?? $_ENV['DB_PORT'] ?? 3306;
+        $this->host = $this->host . (($port != 3306) ? ":$port" : '');
+        
         $this->charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
         
         // Alternative: Load from config file if environment variables not available
@@ -73,7 +78,7 @@ class Database {
     
     /**
      * Establish PDO database connection with enhanced security settings
-     * Configures PDO with appropriate options for security and performance
+     * Updated for Railway.app compatibility
      */
     private function connect() {
         try {
@@ -83,17 +88,25 @@ class Database {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false, // Use real prepared statements for security
-                PDO::ATTR_PERSISTENT => true, // Enable connection pooling for performance
+                PDO::ATTR_PERSISTENT => false, // Disable persistent connections for Railway
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$this->charset}",
                 PDO::ATTR_TIMEOUT => 30, // Connection timeout
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true, // Buffer queries for better memory management
                 PDO::MYSQL_ATTR_FOUND_ROWS => true, // Return matched rows instead of changed rows
             ];
             
-            // Add SSL options for production environments
-            if (isset($_ENV['DB_SSL_REQUIRED']) && $_ENV['DB_SSL_REQUIRED'] === 'true') {
-                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
-                $options[PDO::MYSQL_ATTR_SSL_CA] = $_ENV['DB_SSL_CA'] ?? null;
+            // Railway-specific SSL settings
+            $isRailway = !empty($_ENV['RAILWAY_ENVIRONMENT']) || !empty($_ENV['MYSQL_HOST']);
+            
+            if ($isRailway) {
+                // Railway's internal network doesn't require SSL verification
+                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            } else {
+                // Add SSL options for production environments
+                if (isset($_ENV['DB_SSL_REQUIRED']) && $_ENV['DB_SSL_REQUIRED'] === 'true') {
+                    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+                    $options[PDO::MYSQL_ATTR_SSL_CA] = $_ENV['DB_SSL_CA'] ?? null;
+                }
             }
             
             $this->connection = new PDO($dsn, $this->username, $this->password, $options);
@@ -103,9 +116,31 @@ class Database {
             
         } catch (PDOException $e) {
             // Log error securely without exposing credentials
-            error_log("Database connection failed: " . $e->getMessage());
+            error_log("Database connection failed: " . $e->getMessage() . " | Host: " . $this->host . " | Database: " . $this->database);
             throw new Exception("Database connection failed. Please check configuration.");
         }
+    }
+    
+    /**
+     * Debug method to show current configuration
+     * Remove this method in production!
+     */
+    public function debugConfig() {
+        return [
+            'host' => $this->host,
+            'database' => $this->database,
+            'username' => $this->username,
+            'password' => $this->password ? '[SET]' : '[NOT SET]',
+            'charset' => $this->charset,
+            'environment_vars' => [
+                'MYSQL_HOST' => $_ENV['MYSQL_HOST'] ?? '[NOT SET]',
+                'MYSQL_DATABASE' => $_ENV['MYSQL_DATABASE'] ?? '[NOT SET]',
+                'MYSQL_USER' => $_ENV['MYSQL_USER'] ?? '[NOT SET]',
+                'MYSQL_PASSWORD' => !empty($_ENV['MYSQL_PASSWORD']) ? '[SET]' : '[NOT SET]',
+                'MYSQL_PORT' => $_ENV['MYSQL_PORT'] ?? '[NOT SET]',
+                'RAILWAY_ENVIRONMENT' => $_ENV['RAILWAY_ENVIRONMENT'] ?? '[NOT SET]',
+            ]
+        ];
     }
     
     /**
@@ -346,7 +381,7 @@ class Database {
     
     /**
      * Generic CRUD Operations for all tables
-     * These methods provide standardized database operations for the word builder game
+     * These methods provide standardised database operations for the word builder game
      */
     
     /**
