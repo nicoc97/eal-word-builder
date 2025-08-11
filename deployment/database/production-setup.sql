@@ -18,7 +18,7 @@
 -- ============================================================================
 
 -- Use the database
-USE word_builder_game;
+USE railway;
 
 -- ============================================================================
 -- SESSIONS TABLE - Student Session Management

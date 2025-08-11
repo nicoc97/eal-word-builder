@@ -675,7 +675,8 @@ class TeacherDashboard {
         let currentLevel = 1;
         let bestStreak = 0;
 
-        progressRecords.forEach(record => {
+        if (Array.isArray(progressRecords)) {
+            progressRecords.forEach(record => {
             totalWordsCompleted += record.words_completed || 0;
             totalAttempts += record.total_attempts || 0;
             totalCorrectAttempts += record.correct_attempts || 0;
@@ -683,6 +684,9 @@ class TeacherDashboard {
             currentLevel = Math.max(currentLevel, record.level || 1);
             bestStreak = Math.max(bestStreak, record.best_streak || 0);
         });
+        } else {
+            console.error('progressRecords is not an array:', progressRecords);
+        }
 
         console.log('📊 Calculated totals:', {
             totalWordsCompleted,
