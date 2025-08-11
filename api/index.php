@@ -1,5 +1,11 @@
 <?php
 
+// Legacy support for query parameter style requests
+if (isset($_GET['endpoint'])) {
+    include __DIR__ . '/legacy.php';
+    exit;
+}
+
 /**
  * RESTful API Router for Word Builder Game
  * 
