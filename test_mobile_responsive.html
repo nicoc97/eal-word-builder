@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Mobile Responsiveness Test - Word Builder Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Additional test-specific styles */
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 10000;
+            max-width: 200px;
+        }
+        
+        .test-controls {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-results {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .orientation-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10001;
+        }
+        
+        /* Responsive test grid */
+        .responsive-test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .test-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* Touch target test elements */
+        .touch-test-area {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+        
+        .touch-target {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .touch-target.small { width: 30px; height: 30px; }
+        .touch-target.medium { width: 44px; height: 44px; }
+        .touch-target.large { width: 60px; height: 60px; }
+        
+        /* Breakpoint indicators */
+        .breakpoint-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10001;
+        }
+        
+        /* Hide test controls on very small screens */
+        @media (max-width: 320px) {
+            .test-controls {
+                font-size: 12px;
+                padding: 10px;
+            }
+            
+            .test-button {
+                padding: 8px 12px;
+                font-size: 12px;
+                margin: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Device info panel -->
+    <div class="test-panel" id="device-info">
+        <div><strong>Device Info</strong></div>
+        <div id="screen-size">Screen: Loading...</div>
+        <div id="viewport-size">Viewport: Loading...</div>
+        <div id="device-type">Type: Loading...</div>
+        <div id="touch-support">Touch: Loading...</div>
+    </div>
+    
+    <!-- Orientation indicator -->
+    <div class="orientation-indicator" id="orientation-indicator">
+        Portrait
+    </div>
+    
+    <!-- Breakpoint indicator -->
+    <div class="breakpoint-indicator" id="breakpoint-indicator">
+        Breakpoint: Loading...
+    </div>
+
+    <!-- Main game container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="game-header">
+            <div class="header-content">
+                <h1 class="game-title">Word Builder - Mobile Test</h1>
+                <div class="header-controls">
+                    <button class="btn btn-secondary" id="settings-btn">⚙️</button>
+                    <button class="btn btn-secondary" id="teacher-btn">👨‍🏫</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main game area -->
+        <main class="game-main">
+            <!-- Progress section -->
+            <section class="progress-section">
+                <div class="progress-container">
+                    <div class="level-indicator">
+                        <span class="level-label">Level</span>
+                        <span class="level-number" id="current-level">1</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 30%;"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">3/10 words</div>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-label">Score</span>
+                        <span class="score-value" id="current-score">150</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Word section -->
+            <section class="word-section">
+                <div class="word-container">
+                    <div class="word-image-container">
+                        <img src="images/placeholder.svg" alt="Word image" class="word-image" id="word-image">
+                        <button class="pronunciation-btn" id="pronunciation-btn">🔊</button>
+                    </div>
+                    <div class="word-target" id="word-target">
+                        <div class="letter-slot" data-index="0" data-letter="c">C</div>
+                        <div class="letter-slot filled" data-index="1" data-letter="a">A</div>
+                        <div class="letter-slot" data-index="2" data-letter="t"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Letters section -->
+            <section class="letters-section">
+                <div class="letters-container" id="letters-container">
+                    <div class="letter-tile" data-letter="t" draggable="true">T</div>
+                    <div class="letter-tile used" data-letter="a" draggable="false">A</div>
+                    <div class="letter-tile" data-letter="e" draggable="true">E</div>
+                    <div class="letter-tile" data-letter="r" draggable="true">R</div>
+                    <div class="letter-tile" data-letter="s" draggable="true">S</div>
+                </div>
+            </section>
+
+            <!-- Controls section -->
+            <section class="controls-section">
+                <div class="controls-container">
+                    <button class="btn btn-primary" id="check-word-btn">Check Word</button>
+                    <button class="btn btn-secondary" id="clear-word-btn">Clear</button>
+                    <button class="btn btn-secondary" id="hint-btn">Hint</button>
+                </div>
+            </section>
+
+            <!-- Responsive test grid -->
+            <section class="responsive-test-grid">
+                <div class="test-card">
+                    <h3>Flexbox Test</h3>
+                    <p>This should wrap nicely</p>
+                </div>
+                <div class="test-card">
+                    <h3>Grid Test</h3>
+                    <p>Auto-fit columns</p>
+                </div>
+                <div class="test-card">
+                    <h3>Text Test</h3>
+                    <p>Readable on all sizes</p>
+                </div>
+            </section>
+
+            <!-- Touch target test area -->
+            <section class="touch-test-area">
+                <h3>Touch Target Size Test</h3>
+                <p>Test different sized touch targets:</p>
+                <button class="touch-target small">30px</button>
+                <button class="touch-target medium">44px</button>
+                <button class="touch-target large">60px</button>
+                <br><br>
+                <a href="#" class="touch-target medium">Link 44px</a>
+                <input type="button" value="Input 44px" class="touch-target medium">
+            </section>
+        </main>
+    </div>
+
+    <!-- Test controls -->
+    <div class="test-controls">
+        <div style="text-align: center; margin-bottom: 10px;">
+            <strong>Mobile Responsiveness Tests</strong>
+        </div>
+        <div style="text-align: center;">
+            <button class="test-button" onclick="runResponsiveTests()">Run All Tests</button>
+            <button class="test-button" onclick="runTouchTests()">Touch Tests</button>
+            <button class="test-button" onclick="testOrientation()">Orientation</button>
+            <button class="test-button" onclick="showDeviceInfo()">Device Info</button>
+            <button class="test-button" onclick="toggleTestPanel()">Toggle Panel</button>
+        </div>
+        <div class="test-results" id="test-results" style="display: none;">
+            <div id="test-output">Test results will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/touch-handler.js"></script>
+    <script src="js/responsive-tester.js"></script>
+    <script src="js/ui.js"></script>
+    
+    <script>
+        // Initialize test environment
+        let testResults = [];
+        let deviceInfo = {};
+        
+        // Update device info display
+        function updateDeviceInfo() {
+            deviceInfo = {
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio || 1,
+                touchSupport: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+                userAgent: navigator.userAgent,
+                orientation: getOrientation(),
+                breakpoint: getCurrentBreakpoint()
+            };
+            
+            document.getElementById('screen-size').textContent = `Screen: ${deviceInfo.screenWidth}×${deviceInfo.screenHeight}`;
+            document.getElementById('viewport-size').textContent = `Viewport: ${deviceInfo.viewportWidth}×${deviceInfo.viewportHeight}`;
+            document.getElementById('device-type').textContent = `Type: ${getDeviceType()}`;
+            document.getElementById('touch-support').textContent = `Touch: ${deviceInfo.touchSupport ? 'Yes' : 'No'}`;
+            document.getElementById('orientation-indicator').textContent = deviceInfo.orientation;
+            document.getElementById('breakpoint-indicator').textContent = `Breakpoint: ${deviceInfo.breakpoint}`;
+        }
+        
+        function getOrientation() {
+            if (screen.orientation) {
+                return screen.orientation.type;
+            } else if (window.orientation !== undefined) {
+                return Math.abs(window.orientation) === 90 ? 'landscape' : 'portrait';
+            } else {
+                return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+            }
+        }
+        
+        function getCurrentBreakpoint() {
+            const width = window.innerWidth;
+            if (width <= 480) return 'xs (Mobile)';
+            if (width <= 768) return 'sm (Mobile/Tablet)';
+            if (width <= 1024) return 'md (Tablet)';
+            return 'lg (Desktop)';
+        }
+        
+        function getDeviceType() {
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                if (window.innerWidth <= 768) return 'Mobile';
+                return 'Tablet';
+            }
+            return 'Desktop';
+        }
+        
+        // Test functions
+        async function runResponsiveTests() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Running responsive tests...';
+            
+            try {
+                const report = await window.ResponsiveTester.runResponsiveTests();
+                displayTestReport(report);
+            } catch (error) {
+                document.getElementById('test-output').innerHTML = `Error running tests: ${error.message}`;
+            }
+        }
+        
+        async function runTouchTests() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Running touch tests...';
+            
+            try {
+                const touchTests = window.TouchHandler.runTouchTests();
+                displayTouchTests(touchTests);
+            } catch (error) {
+                document.getElementById('test-output').innerHTML = `Error running touch tests: ${error.message}`;
+            }
+        }
+        
+        function testOrientation() {
+            showTestResults(true);
+            const orientation = getOrientation();
+            const aspectRatio = window.innerWidth / window.innerHeight;
+            
+            document.getElementById('test-output').innerHTML = `
+                <strong>Orientation Test Results:</strong><br>
+                Current orientation: ${orientation}<br>
+                Aspect ratio: ${aspectRatio.toFixed(2)}<br>
+                Viewport: ${window.innerWidth}×${window.innerHeight}<br>
+                Screen: ${window.screen.width}×${window.screen.height}<br>
+                <br>
+                <em>Try rotating your device to test orientation changes.</em>
+            `;
+        }
+        
+        function showDeviceInfo() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = `
+                <strong>Device Information:</strong><br>
+                User Agent: ${navigator.userAgent}<br>
+                Platform: ${navigator.platform}<br>
+                Screen: ${window.screen.width}×${window.screen.height}<br>
+                Viewport: ${window.innerWidth}×${window.innerHeight}<br>
+                Device Pixel Ratio: ${window.devicePixelRatio || 1}<br>
+                Touch Support: ${deviceInfo.touchSupport ? 'Yes' : 'No'}<br>
+                Max Touch Points: ${navigator.maxTouchPoints || 0}<br>
+                Connection: ${navigator.connection ? navigator.connection.effectiveType : 'Unknown'}<br>
+                Memory: ${navigator.deviceMemory || 'Unknown'} GB<br>
+                Cores: ${navigator.hardwareConcurrency || 'Unknown'}
+            `;
+        }
+        
+        function displayTestReport(report) {
+            const summary = report.summary;
+            let html = `
+                <strong>Test Summary:</strong><br>
+                Overall Status: <span style="color: ${summary.overallStatus === 'PASS' ? 'green' : 'orange'}">${summary.overallStatus}</span><br>
+                Pass Rate: ${summary.passRate} (${summary.passed}/${summary.total})<br>
+                Critical Issues: ${summary.criticalIssues}<br>
+                High Priority Issues: ${summary.highIssues}<br><br>
+                
+                <strong>Test Results:</strong><br>
+            `;
+            
+            report.testResults.forEach(test => {
+                const icon = test.passed ? '✅' : '❌';
+                const color = test.passed ? 'green' : (test.importance === 'critical' ? 'red' : 'orange');
+                html += `${icon} <span style="color: ${color}">${test.name}</span><br>`;
+                html += `&nbsp;&nbsp;&nbsp;${test.details}<br>`;
+            });
+            
+            document.getElementById('test-output').innerHTML = html;
+        }
+        
+        function displayTouchTests(tests) {
+            let html = '<strong>Touch Test Results:</strong><br>';
+            
+            tests.forEach(test => {
+                const icon = test.passed ? '✅' : '❌';
+                html += `${icon} ${test.name}<br>`;
+                html += `&nbsp;&nbsp;&nbsp;${test.details}<br>`;
+            });
+            
+            document.getElementById('test-output').innerHTML = html;
+        }
+        
+        function showTestResults(show) {
+            document.getElementById('test-results').style.display = show ? 'block' : 'none';
+        }
+        
+        function toggleTestPanel() {
+            const panel = document.getElementById('test-results');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Event listeners
+        window.addEventListener('resize', updateDeviceInfo);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateDeviceInfo, 100);
+        });
+        
+        // Touch target test handlers
+        document.querySelectorAll('.touch-target').forEach(target => {
+            target.addEventListener('click', function(e) {
+                e.preventDefault();
+                const size = this.classList.contains('small') ? '30px' : 
+                           this.classList.contains('medium') ? '44px' : '60px';
+                alert(`Touched ${size} target successfully!`);
+            });
+        });
+        
+        // Initialize
+        updateDeviceInfo();
+        
+        // Auto-run basic tests on load
+        setTimeout(() => {
+            if (window.ResponsiveTester) {
+                console.log('Auto-running responsive tests...');
+                runResponsiveTests();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

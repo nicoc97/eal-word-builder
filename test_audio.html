@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Manager Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            background: #4facfe;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #3a8bfe;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>AudioManager Test</h1>
+        
+        <div class="info" id="capabilities"></div>
+        
+        <h3>Speech Tests</h3>
+        <button onclick="testPronunciation()">Test Pronunciation ("cat")</button>
+        <button onclick="testPronunciation('hello')">Test Pronunciation ("hello")</button>
+        
+        <h3>Sound Effect Tests</h3>
+        <button onclick="testSuccess()">Test Success Sound</button>
+        <button onclick="testError()">Test Error Sound</button>
+        <button onclick="testLevelUp()">Test Level Up Sound</button>
+        <button onclick="testClick()">Test Click Sound</button>
+        
+        <h3>Volume Tests</h3>
+        <button onclick="setVolume(0.5)">Set Volume 50%</button>
+        <button onclick="setVolume(1.0)">Set Volume 100%</button>
+        
+        <h3>Comprehensive Test</h3>
+        <button onclick="runFullTest()">Run Full Audio Test</button>
+        
+        <div class="info" id="test-results"></div>
+    </div>
+
+    <script src="js/audio.js"></script>
+    <script>
+        // Display capabilities
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.AudioManager) {
+                const capabilities = window.AudioManager.getCapabilities();
+                document.getElementById('capabilities').innerHTML = 
+                    '<strong>Audio Capabilities:</strong><br>' +
+                    Object.entries(capabilities).map(([key, value]) => 
+                        `${key}: ${value}`
+                    ).join('<br>');
+            }
+        });
+
+        async function testPronunciation(word = 'cat') {
+            if (window.AudioManager) {
+                const result = await window.AudioManager.playPronunciation(word);
+                log(`Pronunciation test for "${word}": ${result ? 'Success' : 'Fallback used'}`);
+            }
+        }
+
+        function testSuccess() {
+            if (window.AudioManager) {
+                window.AudioManager.playSuccess();
+                log('Success sound played');
+            }
+        }
+
+        function testError() {
+            if (window.AudioManager) {
+                window.AudioManager.playError();
+                log('Error sound played');
+            }
+        }
+
+        function testLevelUp() {
+            if (window.AudioManager) {
+                window.AudioManager.playLevelUp();
+                log('Level up sound played');
+            }
+        }
+
+        function testClick() {
+            if (window.AudioManager) {
+                window.AudioManager.playClick();
+                log('Click sound played');
+            }
+        }
+
+        function setVolume(volume) {
+            if (window.AudioManager) {
+                window.AudioManager.setVolume(volume);
+                log(`Volume set to ${Math.round(volume * 100)}%`);
+            }
+        }
+
+        async function runFullTest() {
+            log('Starting comprehensive audio test...');
+            
+            if (!window.AudioManager) {
+                log('ERROR: AudioManager not available');
+                return;
+            }
+
+            // Resume audio context
+            await window.AudioManager.resumeAudioContext();
+            log('Audio context resumed');
+
+            // Test speech
+            await testPronunciation('test');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Test sound effects
+            testSuccess();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testError();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testLevelUp();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testClick();
+            
+            log('Comprehensive test completed');
+        }
+
+        function log(message) {
+            const results = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `[${timestamp}] ${message}<br>`;
+            results.scrollTop = results.scrollHeight;
+        }
+    </script>
+</body>
+</html>

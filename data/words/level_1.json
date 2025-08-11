@@ -1,0 +1,97 @@
+{
+  "level": 1,
+  "name": "Simple CVC Words",
+  "description": "Basic consonant-vowel-consonant words for beginning EAL learners",
+  "words": [
+    {
+      "word": "cat",
+      "image": "images/words/cat.jpg",
+      "phonetic": "/kæt/",
+      "difficulty": 1,
+      "category": "animals",
+      "letters": ["c", "a", "t"],
+      "hints": "A furry pet that says meow"
+    },
+    {
+      "word": "dog",
+      "image": "images/words/dog.jpg",
+      "phonetic": "/dɒɡ/",
+      "difficulty": 1,
+      "category": "animals",
+      "letters": ["d", "o", "g"],
+      "hints": "A loyal pet that barks"
+    },
+    {
+      "word": "pen",
+      "image": "images/words/pen.jpg",
+      "phonetic": "/pen/",
+      "difficulty": 1,
+      "category": "objects",
+      "letters": ["p", "e", "n"],
+      "hints": "You write with this"
+    },
+    {
+      "word": "cup",
+      "image": "images/words/cup.jpg",
+      "phonetic": "/kʌp/",
+      "difficulty": 1,
+      "category": "objects",
+      "letters": ["c", "u", "p"],
+      "hints": "You drink from this"
+    },
+    {
+      "word": "sun",
+      "image": "images/words/sun.jpg",
+      "phonetic": "/sʌn/",
+      "difficulty": 1,
+      "category": "objects",
+      "letters": ["s", "u", "n"],
+      "hints": "Bright light in the sky"
+    },
+    {
+      "word": "bat",
+      "image": "images/words/bat.jpg",
+      "phonetic": "/bæt/",
+      "difficulty": 1,
+      "category": "animals",
+      "letters": ["b", "a", "t"],
+      "hints": "Flying animal that sleeps upside down"
+    },
+    {
+      "word": "hat",
+      "image": "images/words/hat.jpg",
+      "phonetic": "/hæt/",
+      "difficulty": 1,
+      "category": "objects",
+      "letters": ["h", "a", "t"],
+      "hints": "You wear this on your head"
+    },
+    {
+      "word": "run",
+      "image": "images/words/run.jpg",
+      "phonetic": "/rʌn/",
+      "difficulty": 1,
+      "category": "actions",
+      "letters": ["r", "u", "n"],
+      "hints": "Move fast with your legs"
+    },
+    {
+      "word": "sit",
+      "image": "images/words/sit.jpg",
+      "phonetic": "/sɪt/",
+      "difficulty": 1,
+      "category": "actions",
+      "letters": ["s", "i", "t"],
+      "hints": "Rest on a chair"
+    },
+    {
+      "word": "big",
+      "image": "images/words/big.jpg",
+      "phonetic": "/bɪɡ/",
+      "difficulty": 1,
+      "category": "objects",
+      "letters": ["b", "i", "g"],
+      "hints": "Not small"
+    }
+  ]
+}

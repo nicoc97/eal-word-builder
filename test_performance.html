@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Testing - Word Builder Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .performance-dashboard {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 350px;
+            max-height: 80vh;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 10000;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .metric-label {
+            font-weight: bold;
+        }
+        
+        .metric-value {
+            color: #4facfe;
+        }
+        
+        .metric-good { color: #4caf50; }
+        .metric-warning { color: #ff9800; }
+        .metric-error { color: #f44336; }
+        
+        .test-controls {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-results {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+        
+        .resource-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            font-size: 10px;
+        }
+        
+        .lazy-image {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .lazy-image.loaded {
+            opacity: 1;
+        }
+        
+        .performance-chart {
+            width: 100%;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+            position: relative;
+            border-radius: 4px;
+        }
+        
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            background: #4facfe;
+            transition: height 0.3s ease;
+        }
+        
+        /* Hide dashboard on very small screens */
+        @media (max-width: 480px) {
+            .performance-dashboard {
+                width: calc(100vw - 20px);
+                right: 10px;
+                font-size: 10px;
+            }
+            
+            .test-controls {
+                font-size: 11px;
+                padding: 10px;
+            }
+            
+            .test-button {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Performance Dashboard -->
+    <div class="performance-dashboard" id="performance-dashboard">
+        <div style="text-align: center; margin-bottom: 10px; font-weight: bold;">
+            Performance Monitor
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Load Time:</span>
+            <span class="metric-value" id="load-time">Measuring...</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">FPS:</span>
+            <span class="metric-value" id="fps">Measuring...</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Memory:</span>
+            <span class="metric-value" id="memory">Measuring...</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Network:</span>
+            <span class="metric-value" id="network-requests">0 requests</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Loaded Resources:</span>
+            <span class="metric-value" id="loaded-resources">0</span>
+        </div>
+        
+        <div class="performance-chart" id="fps-chart"></div>
+        
+        <div class="resource-list" id="resource-list">
+            <div style="font-weight: bold; margin-bottom: 5px;">Recent Resources:</div>
+        </div>
+    </div>
+
+    <!-- Main game container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="game-header">
+            <div class="header-content">
+                <h1 class="game-title">Performance Test - Word Builder</h1>
+                <div class="header-controls">
+                    <button class="btn btn-secondary" onclick="toggleDashboard()">📊</button>
+                    <button class="btn btn-secondary" onclick="clearCache()">🗑️</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main game area -->
+        <main class="game-main">
+            <!-- Progress section -->
+            <section class="progress-section">
+                <div class="progress-container">
+                    <div class="level-indicator">
+                        <span class="level-label">Level</span>
+                        <span class="level-number" id="current-level">1</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 30%;"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">3/10 words</div>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-label">Score</span>
+                        <span class="score-value" id="current-score">150</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Word section -->
+            <section class="word-section">
+                <div class="word-container">
+                    <div class="word-image-container">
+                        <img data-src="images/placeholder.svg" alt="Word image" class="word-image lazy-image" id="word-image">
+                        <button class="pronunciation-btn" id="pronunciation-btn">🔊</button>
+                    </div>
+                    <div class="word-target" id="word-target">
+                        <div class="letter-slot" data-index="0" data-letter="c">C</div>
+                        <div class="letter-slot filled" data-index="1" data-letter="a">A</div>
+                        <div class="letter-slot" data-index="2" data-letter="t"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Letters section -->
+            <section class="letters-section">
+                <div class="letters-container" id="letters-container">
+                    <div class="letter-tile" data-letter="t" draggable="true">T</div>
+                    <div class="letter-tile used" data-letter="a" draggable="false">A</div>
+                    <div class="letter-tile" data-letter="e" draggable="true">E</div>
+                    <div class="letter-tile" data-letter="r" draggable="true">R</div>
+                    <div class="letter-tile" data-letter="s" draggable="true">S</div>
+                </div>
+            </section>
+
+            <!-- Controls section -->
+            <section class="controls-section">
+                <div class="controls-container">
+                    <button class="btn btn-primary" id="check-word-btn">Check Word</button>
+                    <button class="btn btn-secondary" id="clear-word-btn">Clear</button>
+                    <button class="btn btn-secondary" id="hint-btn">Hint</button>
+                </div>
+            </section>
+
+            <!-- Test images for lazy loading -->
+            <section class="word-section" style="margin-top: 2rem;">
+                <h3>Lazy Loading Test Images</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+                    <img data-src="images/placeholder.svg" alt="Test 1" class="lazy-image" style="width: 100px; height: 100px;">
+                    <img data-src="images/placeholder.svg" alt="Test 2" class="lazy-image" style="width: 100px; height: 100px;">
+                    <img data-src="images/placeholder.svg" alt="Test 3" class="lazy-image" style="width: 100px; height: 100px;">
+                    <img data-src="images/placeholder.svg" alt="Test 4" class="lazy-image" style="width: 100px; height: 100px;">
+                    <img data-src="images/placeholder.svg" alt="Test 5" class="lazy-image" style="width: 100px; height: 100px;">
+                    <img data-src="images/placeholder.svg" alt="Test 6" class="lazy-image" style="width: 100px; height: 100px;">
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Test controls -->
+    <div class="test-controls">
+        <div style="text-align: center; margin-bottom: 10px;">
+            <strong>Performance Tests</strong>
+        </div>
+        <div style="text-align: center;">
+            <button class="test-button" onclick="runPerformanceTests()">Run All Tests</button>
+            <button class="test-button" onclick="testLazyLoading()">Test Lazy Loading</button>
+            <button class="test-button" onclick="testOfflineMode()">Test Offline</button>
+            <button class="test-button" onclick="testDatabasePerformance()">Test Database</button>
+            <button class="test-button" onclick="stressTest()">Stress Test</button>
+            <button class="test-button" onclick="generateReport()">Generate Report</button>
+        </div>
+        <div class="test-results" id="test-results" style="display: none;">
+            <div id="test-output">Test results will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/error-handler.js"></script>
+    <script src="js/touch-handler.js"></script>
+    <script src="js/responsive-tester.js"></script>
+    <script src="js/orientation-handler.js"></script>
+    <script src="js/performance-optimizer.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/progress.js"></script>
+    
+    <script>
+        // Performance monitoring variables
+        let performanceData = {
+            fps: [],
+            memory: [],
+            networkRequests: 0,
+            loadedResources: 0
+        };
+        
+        // Initialize performance monitoring
+        function initPerformanceMonitoring() {
+            updatePerformanceDisplay();
+            setInterval(updatePerformanceDisplay, 1000);
+            
+            // Monitor network requests
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                performanceData.networkRequests++;
+                updateNetworkDisplay();
+                return originalFetch.apply(this, args);
+            };
+            
+            // Monitor resource loading
+            window.addEventListener('load', () => {
+                updateLoadTimeDisplay();
+            });
+        }
+        
+        function updatePerformanceDisplay() {
+            // Update FPS
+            if (window.PerformanceOptimizer && window.PerformanceOptimizer.metrics.frameRate) {
+                const fps = window.PerformanceOptimizer.metrics.frameRate;
+                document.getElementById('fps').textContent = fps + ' fps';
+                document.getElementById('fps').className = 'metric-value ' + 
+                    (fps >= 50 ? 'metric-good' : fps >= 30 ? 'metric-warning' : 'metric-error');
+                
+                // Update FPS chart
+                updateFPSChart(fps);
+            }
+            
+            // Update memory
+            if (window.PerformanceOptimizer && window.PerformanceOptimizer.metrics.memoryUsage) {
+                const memory = window.PerformanceOptimizer.metrics.memoryUsage;
+                const memoryMB = Math.round(memory.used / 1024 / 1024);
+                document.getElementById('memory').textContent = memoryMB + ' MB';
+                document.getElementById('memory').className = 'metric-value ' + 
+                    (memoryMB < 50 ? 'metric-good' : memoryMB < 100 ? 'metric-warning' : 'metric-error');
+            }
+            
+            // Update loaded resources
+            if (window.PerformanceOptimizer) {
+                const resourceCount = window.PerformanceOptimizer.loadedResources.size;
+                document.getElementById('loaded-resources').textContent = resourceCount;
+                performanceData.loadedResources = resourceCount;
+            }
+        }
+        
+        function updateLoadTimeDisplay() {
+            if (window.PerformanceOptimizer && window.PerformanceOptimizer.metrics.loadTime) {
+                const loadTime = window.PerformanceOptimizer.metrics.loadTime;
+                document.getElementById('load-time').textContent = loadTime + ' ms';
+                document.getElementById('load-time').className = 'metric-value ' + 
+                    (loadTime < 2000 ? 'metric-good' : loadTime < 4000 ? 'metric-warning' : 'metric-error');
+            }
+        }
+        
+        function updateNetworkDisplay() {
+            document.getElementById('network-requests').textContent = performanceData.networkRequests + ' requests';
+        }
+        
+        function updateFPSChart(fps) {
+            const chart = document.getElementById('fps-chart');
+            const bars = chart.querySelectorAll('.chart-bar');
+            
+            // Add new bar
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar';
+            bar.style.height = (fps / 60 * 100) + '%';
+            bar.style.left = (bars.length * 3) + 'px';
+            chart.appendChild(bar);
+            
+            // Remove old bars if too many
+            if (bars.length > 100) {
+                chart.removeChild(bars[0]);
+                // Shift remaining bars
+                chart.querySelectorAll('.chart-bar').forEach((bar, index) => {
+                    bar.style.left = (index * 3) + 'px';
+                });
+            }
+        }
+        
+        function updateResourceList() {
+            const list = document.getElementById('resource-list');
+            if (window.PerformanceOptimizer && window.PerformanceOptimizer.metrics.networkRequests) {
+                const recent = window.PerformanceOptimizer.metrics.networkRequests.slice(-5);
+                const html = '<div style="font-weight: bold; margin-bottom: 5px;">Recent Resources:</div>' +
+                    recent.map(req => `
+                        <div class="resource-item">
+                            <span>${req.name.split('/').pop()}</span>
+                            <span>${Math.round(req.duration)}ms</span>
+                        </div>
+                    `).join('');
+                list.innerHTML = html;
+            }
+        }
+        
+        // Test functions
+        async function runPerformanceTests() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Running performance tests...';
+            
+            try {
+                const results = await window.PerformanceOptimizer.runPerformanceTests();
+                displayPerformanceResults(results);
+            } catch (error) {
+                document.getElementById('test-output').innerHTML = `Error: ${error.message}`;
+            }
+        }
+        
+        function testLazyLoading() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Testing lazy loading...';
+            
+            const lazyImages = document.querySelectorAll('.lazy-image');
+            let loadedCount = 0;
+            
+            lazyImages.forEach((img, index) => {
+                if (img.src) {
+                    loadedCount++;
+                } else {
+                    // Trigger lazy loading by scrolling into view
+                    img.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    img.addEventListener('load', () => {
+                        loadedCount++;
+                        img.classList.add('loaded');
+                        
+                        if (loadedCount === lazyImages.length) {
+                            document.getElementById('test-output').innerHTML = 
+                                `✅ Lazy loading test completed. ${loadedCount}/${lazyImages.length} images loaded.`;
+                        }
+                    });
+                }
+            });
+            
+            if (loadedCount === lazyImages.length) {
+                document.getElementById('test-output').innerHTML = 
+                    `✅ All images already loaded. ${loadedCount}/${lazyImages.length} images.`;
+            }
+        }
+        
+        async function testOfflineMode() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Testing offline functionality...';
+            
+            try {
+                const offlineTests = window.PerformanceOptimizer.testOfflineFunctionality();
+                let html = '<strong>Offline Functionality Tests:</strong><br>';
+                
+                offlineTests.forEach(test => {
+                    const icon = test.passed ? '✅' : '❌';
+                    html += `${icon} ${test.name}: ${test.details}<br>`;
+                });
+                
+                document.getElementById('test-output').innerHTML = html;
+            } catch (error) {
+                document.getElementById('test-output').innerHTML = `Error testing offline mode: ${error.message}`;
+            }
+        }
+        
+        async function testDatabasePerformance() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Testing database performance...';
+            
+            try {
+                const dbTests = await window.PerformanceOptimizer.validateDatabasePerformance();
+                let html = '<strong>Database Performance Tests:</strong><br>';
+                
+                dbTests.forEach(test => {
+                    const icon = test.passed ? '✅' : '❌';
+                    html += `${icon} ${test.name}: ${test.details}<br>`;
+                });
+                
+                document.getElementById('test-output').innerHTML = html;
+            } catch (error) {
+                document.getElementById('test-output').innerHTML = `Error testing database: ${error.message}`;
+            }
+        }
+        
+        function stressTest() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Running stress test...';
+            
+            // Create many DOM elements to test performance
+            const startTime = performance.now();
+            const container = document.createElement('div');
+            
+            for (let i = 0; i < 1000; i++) {
+                const element = document.createElement('div');
+                element.textContent = `Stress test element ${i}`;
+                element.style.padding = '5px';
+                element.style.margin = '1px';
+                container.appendChild(element);
+            }
+            
+            document.body.appendChild(container);
+            
+            // Force reflow
+            container.offsetHeight;
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            
+            // Clean up
+            document.body.removeChild(container);
+            
+            const result = duration < 100 ? '✅ PASS' : duration < 200 ? '⚠️ SLOW' : '❌ FAIL';
+            document.getElementById('test-output').innerHTML = 
+                `<strong>Stress Test Results:</strong><br>
+                DOM manipulation time: ${duration.toFixed(2)}ms<br>
+                Result: ${result}`;
+        }
+        
+        function generateReport() {
+            showTestResults(true);
+            document.getElementById('test-output').innerHTML = 'Generating performance report...';
+            
+            try {
+                const report = window.PerformanceOptimizer.generatePerformanceReport();
+                
+                let html = '<strong>Performance Report:</strong><br>';
+                html += `Load Time: ${report.metrics.loadTime || 'N/A'}ms<br>`;
+                html += `Frame Rate: ${report.metrics.frameRate || 'N/A'} fps<br>`;
+                html += `Memory Usage: ${report.metrics.memoryUsage ? Math.round(report.metrics.memoryUsage.used / 1024 / 1024) + 'MB' : 'N/A'}<br>`;
+                html += `Network Requests: ${report.metrics.networkRequests.length}<br>`;
+                html += `Loaded Resources: ${report.loadedResources.length}<br><br>`;
+                
+                if (report.recommendations.length > 0) {
+                    html += '<strong>Recommendations:</strong><br>';
+                    report.recommendations.forEach(rec => {
+                        const icon = rec.type === 'critical' ? '🔴' : rec.type === 'warning' ? '🟡' : '🔵';
+                        html += `${icon} ${rec.message}<br>`;
+                    });
+                }
+                
+                document.getElementById('test-output').innerHTML = html;
+                
+                // Also log full report to console
+                console.log('Full Performance Report:', report);
+            } catch (error) {
+                document.getElementById('test-output').innerHTML = `Error generating report: ${error.message}`;
+            }
+        }
+        
+        function displayPerformanceResults(results) {
+            let html = `<strong>Performance Test Results:</strong><br>
+                       Total: ${results.total}, Passed: ${results.passed}, Failed: ${results.failed}<br><br>`;
+            
+            results.tests.forEach(test => {
+                const icon = test.passed ? '✅' : '❌';
+                html += `${icon} ${test.name}: ${test.details}<br>`;
+            });
+            
+            document.getElementById('test-output').innerHTML = html;
+        }
+        
+        function showTestResults(show) {
+            document.getElementById('test-results').style.display = show ? 'block' : 'none';
+        }
+        
+        function toggleDashboard() {
+            const dashboard = document.getElementById('performance-dashboard');
+            dashboard.style.display = dashboard.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function clearCache() {
+            if (window.PerformanceOptimizer) {
+                window.PerformanceOptimizer.loadedResources.clear();
+                performanceData.networkRequests = 0;
+                updatePerformanceDisplay();
+                updateNetworkDisplay();
+                alert('Cache cleared!');
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            initPerformanceMonitoring();
+            
+            // Auto-run performance tests after a delay
+            setTimeout(() => {
+                console.log('Auto-running performance tests...');
+                runPerformanceTests();
+            }, 2000);
+        });
+        
+        // Update resource list periodically
+        setInterval(updateResourceList, 2000);
+    </script>
+</body>
+</html>

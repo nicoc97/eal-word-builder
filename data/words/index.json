@@ -1,0 +1,74 @@
+{
+  "game_info": {
+    "title": "Word Builder Game",
+    "description": "Progressive vocabulary building for EAL learners",
+    "version": "1.0.0",
+    "total_levels": 3
+  },
+  "levels": [
+    {
+      "level": 1,
+      "name": "Simple CVC Words",
+      "description": "Basic consonant-vowel-consonant words for beginning EAL learners",
+      "file": "level_1.json",
+      "word_count": 10,
+      "difficulty": "beginner",
+      "word_length": 3,
+      "categories": ["animals", "objects", "actions"],
+      "learning_objectives": [
+        "Recognize basic letter-sound relationships",
+        "Build simple three-letter words",
+        "Learn common vocabulary for animals, objects, and actions"
+      ]
+    },
+    {
+      "level": 2,
+      "name": "CVCC and CCVC Words",
+      "description": "Four-letter words with consonant clusters for intermediate learners",
+      "file": "level_2.json",
+      "word_count": 12,
+      "difficulty": "intermediate",
+      "word_length": 4,
+      "categories": ["animals", "objects", "actions"],
+      "learning_objectives": [
+        "Handle consonant blends and clusters",
+        "Build four-letter words with confidence",
+        "Expand vocabulary with more complex concepts"
+      ]
+    },
+    {
+      "level": 3,
+      "name": "Complex Words and Blends",
+      "description": "Five-letter words and complex consonant blends for advanced beginners",
+      "file": "level_3.json",
+      "word_count": 12,
+      "difficulty": "advanced_beginner",
+      "word_length": 5,
+      "categories": ["animals", "objects", "actions"],
+      "learning_objectives": [
+        "Master complex consonant blends",
+        "Build five-letter words accurately",
+        "Develop confidence with longer vocabulary"
+      ]
+    }
+  ],
+  "categories": {
+    "animals": {
+      "description": "Living creatures and pets",
+      "examples": ["cat", "dog", "frog", "horse"]
+    },
+    "objects": {
+      "description": "Things, items, and everyday objects",
+      "examples": ["pen", "cup", "book", "house"]
+    },
+    "actions": {
+      "description": "Things you can do - verbs and activities",
+      "examples": ["run", "sit", "jump", "smile"]
+    }
+  },
+  "phonetic_guide": {
+    "notation": "IPA (International Phonetic Alphabet)",
+    "purpose": "Helps with pronunciation using Web Speech API",
+    "note": "Phonetic transcriptions support accurate text-to-speech conversion"
+  }
+}

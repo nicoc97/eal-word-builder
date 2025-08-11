@@ -1,0 +1,115 @@
+{
+  "level": 3,
+  "name": "Complex Words and Blends",
+  "description": "Five-letter words and complex consonant blends for advanced beginners",
+  "words": [
+    {
+      "word": "horse",
+      "image": "images/words/horse.jpg",
+      "phonetic": "/hɔːrs/",
+      "difficulty": 3,
+      "category": "animals",
+      "letters": ["h", "o", "r", "s", "e"],
+      "hints": "Large animal that people can ride"
+    },
+    {
+      "word": "mouse",
+      "image": "images/words/mouse.jpg",
+      "phonetic": "/maʊs/",
+      "difficulty": 3,
+      "category": "animals",
+      "letters": ["m", "o", "u", "s", "e"],
+      "hints": "Small animal that cats like to chase"
+    },
+    {
+      "word": "snake",
+      "image": "images/words/snake.jpg",
+      "phonetic": "/sneɪk/",
+      "difficulty": 3,
+      "category": "animals",
+      "letters": ["s", "n", "a", "k", "e"],
+      "hints": "Long animal with no legs"
+    },
+    {
+      "word": "house",
+      "image": "images/words/house.jpg",
+      "phonetic": "/haʊs/",
+      "difficulty": 3,
+      "category": "objects",
+      "letters": ["h", "o", "u", "s", "e"],
+      "hints": "Building where people live"
+    },
+    {
+      "word": "chair",
+      "image": "images/words/chair.jpg",
+      "phonetic": "/tʃeər/",
+      "difficulty": 3,
+      "category": "objects",
+      "letters": ["c", "h", "a", "i", "r"],
+      "hints": "Furniture you sit on"
+    },
+    {
+      "word": "table",
+      "image": "images/words/table.jpg",
+      "phonetic": "/teɪbəl/",
+      "difficulty": 3,
+      "category": "objects",
+      "letters": ["t", "a", "b", "l", "e"],
+      "hints": "Flat surface where you eat or work"
+    },
+    {
+      "word": "water",
+      "image": "images/words/water.jpg",
+      "phonetic": "/wɔːtər/",
+      "difficulty": 3,
+      "category": "objects",
+      "letters": ["w", "a", "t", "e", "r"],
+      "hints": "Clear liquid you drink"
+    },
+    {
+      "word": "smile",
+      "image": "images/words/smile.jpg",
+      "phonetic": "/smaɪl/",
+      "difficulty": 3,
+      "category": "actions",
+      "letters": ["s", "m", "i", "l", "e"],
+      "hints": "Happy expression on your face"
+    },
+    {
+      "word": "sleep",
+      "image": "images/words/sleep.jpg",
+      "phonetic": "/sliːp/",
+      "difficulty": 3,
+      "category": "actions",
+      "letters": ["s", "l", "e", "e", "p"],
+      "hints": "Rest with your eyes closed"
+    },
+    {
+      "word": "dance",
+      "image": "images/words/dance.jpg",
+      "phonetic": "/dæns/",
+      "difficulty": 3,
+      "category": "actions",
+      "letters": ["d", "a", "n", "c", "e"],
+      "hints": "Move your body to music"
+    },
+    {
+      "word": "green",
+      "image": "images/words/green.jpg",
+      "phonetic": "/ɡriːn/",
+      "difficulty": 3,
+      "category": "objects",
+      "letters": ["g", "r", "e", "e", "n"],
+      "hints": "Color of grass and leaves"
+    },
+    {
+      "word": "happy",
+      "image": "images/words/happy.jpg",
+      "phonetic": "/hæpi/",
+      "difficulty": 3,
+      "category": "objects",
+      "letters": ["h", "a", "p", "p", "y"],
+      "hints": "Feeling good and joyful"
+    }
+  ]
+}

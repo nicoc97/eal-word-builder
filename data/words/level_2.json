@@ -1,0 +1,115 @@
+{
+  "level": 2,
+  "name": "CVCC and CCVC Words",
+  "description": "Four-letter words with consonant clusters for intermediate learners",
+  "words": [
+    {
+      "word": "frog",
+      "image": "images/words/frog.jpg",
+      "phonetic": "/frɒɡ/",
+      "difficulty": 2,
+      "category": "animals",
+      "letters": ["f", "r", "o", "g"],
+      "hints": "Green animal that jumps and croaks"
+    },
+    {
+      "word": "fish",
+      "image": "images/words/fish.jpg",
+      "phonetic": "/fɪʃ/",
+      "difficulty": 2,
+      "category": "animals",
+      "letters": ["f", "i", "s", "h"],
+      "hints": "Swims in water"
+    },
+    {
+      "word": "bird",
+      "image": "images/words/bird.jpg",
+      "phonetic": "/bɜːrd/",
+      "difficulty": 2,
+      "category": "animals",
+      "letters": ["b", "i", "r", "d"],
+      "hints": "Has wings and can fly"
+    },
+    {
+      "word": "book",
+      "image": "images/words/book.jpg",
+      "phonetic": "/bʊk/",
+      "difficulty": 2,
+      "category": "objects",
+      "letters": ["b", "o", "o", "k"],
+      "hints": "You read this"
+    },
+    {
+      "word": "milk",
+      "image": "images/words/milk.jpg",
+      "phonetic": "/mɪlk/",
+      "difficulty": 2,
+      "category": "objects",
+      "letters": ["m", "i", "l", "k"],
+      "hints": "White drink from cows"
+    },
+    {
+      "word": "hand",
+      "image": "images/words/hand.jpg",
+      "phonetic": "/hænd/",
+      "difficulty": 2,
+      "category": "objects",
+      "letters": ["h", "a", "n", "d"],
+      "hints": "You have five fingers on this"
+    },
+    {
+      "word": "jump",
+      "image": "images/words/jump.jpg",
+      "phonetic": "/dʒʌmp/",
+      "difficulty": 2,
+      "category": "actions",
+      "letters": ["j", "u", "m", "p"],
+      "hints": "Leap up in the air"
+    },
+    {
+      "word": "walk",
+      "image": "images/words/walk.jpg",
+      "phonetic": "/wɔːk/",
+      "difficulty": 2,
+      "category": "actions",
+      "letters": ["w", "a", "l", "k"],
+      "hints": "Move slowly with your feet"
+    },
+    {
+      "word": "help",
+      "image": "images/words/help.jpg",
+      "phonetic": "/help/",
+      "difficulty": 2,
+      "category": "actions",
+      "letters": ["h", "e", "l", "p"],
+      "hints": "Give assistance to someone"
+    },
+    {
+      "word": "play",
+      "image": "images/words/play.jpg",
+      "phonetic": "/pleɪ/",
+      "difficulty": 2,
+      "category": "actions",
+      "letters": ["p", "l", "a", "y"],
+      "hints": "Have fun with games or toys"
+    },
+    {
+      "word": "tree",
+      "image": "images/words/tree.jpg",
+      "phonetic": "/triː/",
+      "difficulty": 2,
+      "category": "objects",
+      "letters": ["t", "r", "e", "e"],
+      "hints": "Tall plant with leaves and branches"
+    },
+    {
+      "word": "blue",
+      "image": "images/words/blue.jpg",
+      "phonetic": "/bluː/",
+      "difficulty": 2,
+      "category": "objects",
+      "letters": ["b", "l", "u", "e"],
+      "hints": "Color of the sky"
+    }
+  ]
+}

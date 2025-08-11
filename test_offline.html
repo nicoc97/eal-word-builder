@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Functionality Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+        .status-display {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #4299e1;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn:hover {
+            background: #3182ce;
+        }
+        .btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Offline Functionality Test</h1>
+        
+        <div class="test-section">
+            <h2>Progress Tracker Status</h2>
+            <div id="status-display" class="status-display">Loading...</div>
+            <div class="test-buttons">
+                <button class="btn" onclick="updateStatus()">Refresh Status</button>
+                <button class="btn" onclick="testOfflineMode()">Simulate Offline</button>
+                <button class="btn" onclick="testOnlineMode()">Simulate Online</button>
+                <button class="btn" onclick="forceSync()">Force Sync</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Progress Data Test</h2>
+            <div class="test-buttons">
+                <button class="btn" onclick="updateProgress()">Update Progress</button>
+                <button class="btn" onclick="recordAttempt(true)">Record Success</button>
+                <button class="btn" onclick="recordAttempt(false)">Record Failure</button>
+                <button class="btn" onclick="resetProgress()">Reset Progress</button>
+            </div>
+            <div id="progress-display" class="status-display">No progress data</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Local Storage Test</h2>
+            <div class="test-buttons">
+                <button class="btn" onclick="viewLocalStorage()">View Local Storage</button>
+                <button class="btn" onclick="clearLocalStorage()">Clear Local Storage</button>
+                <button class="btn" onclick="exportData()">Export Data</button>
+                <button class="btn" onclick="importData()">Import Test Data</button>
+            </div>
+            <div id="storage-display" class="status-display">No storage data</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Network Simulation</h2>
+            <p>Use browser dev tools to simulate network conditions:</p>
+            <ul>
+                <li>Open Dev Tools (F12)</li>
+                <li>Go to Network tab</li>
+                <li>Use "Offline" checkbox to simulate offline mode</li>
+                <li>Use "Slow 3G" to simulate poor connection</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="js/progress.js"></script>
+    <script>
+        let progressTracker;
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for ProgressTracker to initialize
+            setTimeout(() => {
+                progressTracker = window.ProgressTracker;
+                updateStatus();
+                updateProgressDisplay();
+                viewLocalStorage();
+            }, 1000);
+        });
+
+        function updateStatus() {
+            if (!progressTracker) {
+                document.getElementById('status-display').textContent = 'ProgressTracker not available';
+                return;
+            }
+
+            const status = progressTracker.getSyncStatus();
+            const statusText = `
+Online: ${status.isOnline}
+Sync in Progress: ${status.syncInProgress}
+Needs Sync: ${status.needsSync}
+Last Sync Attempt: ${status.lastSyncAttempt || 'Never'}
+Retry Count: ${status.syncRetryCount}
+            `.trim();
+
+            document.getElementById('status-display').textContent = statusText;
+        }
+
+        function updateProgressDisplay() {
+            if (!progressTracker) return;
+
+            const progress = progressTracker.getProgress();
+            const progressText = JSON.stringify(progress, null, 2);
+            document.getElementById('progress-display').textContent = progressText;
+        }
+
+        function viewLocalStorage() {
+            const data = localStorage.getItem('wordBuilderProgress');
+            const displayText = data ? JSON.stringify(JSON.parse(data), null, 2) : 'No data in localStorage';
+            document.getElementById('storage-display').textContent = displayText;
+        }
+
+        function testOfflineMode() {
+            // Simulate offline event
+            window.dispatchEvent(new Event('offline'));
+            setTimeout(updateStatus, 100);
+        }
+
+        function testOnlineMode() {
+            // Simulate online event
+            window.dispatchEvent(new Event('online'));
+            setTimeout(updateStatus, 100);
+        }
+
+        function updateProgress() {
+            if (!progressTracker) return;
+
+            const updates = {
+                level: Math.floor(Math.random() * 5) + 1,
+                score: Math.floor(Math.random() * 1000),
+                wordsCompleted: Math.floor(Math.random() * 50),
+                accuracy: Math.floor(Math.random() * 100)
+            };
+
+            progressTracker.updateProgress(updates);
+            updateProgressDisplay();
+            updateStatus();
+            viewLocalStorage();
+        }
+
+        function recordAttempt(success) {
+            if (!progressTracker) return;
+
+            const words = ['cat', 'dog', 'pen', 'sun', 'hat'];
+            const word = words[Math.floor(Math.random() * words.length)];
+            const level = Math.floor(Math.random() * 3) + 1;
+            const timeTaken = Math.floor(Math.random() * 30) + 5;
+            const errorPattern = success ? null : 'substitution';
+
+            progressTracker.recordWordAttempt(word, level, success, timeTaken, errorPattern);
+            updateProgressDisplay();
+            updateStatus();
+            viewLocalStorage();
+        }
+
+        function resetProgress() {
+            if (!progressTracker) return;
+
+            progressTracker.reset();
+            updateProgressDisplay();
+            updateStatus();
+            viewLocalStorage();
+        }
+
+        async function forceSync() {
+            if (!progressTracker) return;
+
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Syncing...';
+
+            try {
+                await progressTracker.forceSync();
+                updateStatus();
+            } catch (error) {
+                console.error('Sync failed:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Force Sync';
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.removeItem('wordBuilderProgress');
+            viewLocalStorage();
+            updateStatus();
+        }
+
+        function exportData() {
+            if (!progressTracker) return;
+
+            const data = progressTracker.exportProgress();
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'word-builder-progress.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const testData = {
+                sessionId: 'test_session_123',
+                level: 3,
+                score: 250,
+                wordsCompleted: 25,
+                totalAttempts: 30,
+                correctAttempts: 25,
+                accuracy: 83.33,
+                currentStreak: 5,
+                bestStreak: 8,
+                timeSpent: 1200,
+                timeStarted: new Date().toISOString(),
+                lastPlayed: new Date().toISOString(),
+                levelProgress: {
+                    1: { completed: true, score: 100 },
+                    2: { completed: true, score: 90 },
+                    3: { completed: false, score: 60 }
+                },
+                wordAttempts: [
+                    { word: 'cat', level: 1, success: true, timeTaken: 15, timestamp: new Date().toISOString() },
+                    { word: 'dog', level: 1, success: true, timeTaken: 12, timestamp: new Date().toISOString() },
+                    { word: 'pen', level: 2, success: false, timeTaken: 25, errorPattern: 'substitution', timestamp: new Date().toISOString() }
+                ],
+                needsSync: true,
+                version: 1
+            };
+
+            if (progressTracker && progressTracker.importProgress(JSON.stringify(testData))) {
+                updateProgressDisplay();
+                updateStatus();
+                viewLocalStorage();
+                alert('Test data imported successfully!');
+            } else {
+                alert('Failed to import test data');
+            }
+        }
+
+        // Auto-refresh status every 5 seconds
+        setInterval(() => {
+            if (progressTracker) {
+                updateStatus();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

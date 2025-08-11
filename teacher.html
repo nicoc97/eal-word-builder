@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Word Builder</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container teacher-dashboard">
+        <!-- Header -->
+        <header class="dashboard-header" role="banner">
+            <div class="header-content">
+                <h1 class="dashboard-title">Teacher Dashboard</h1>
+                <div class="header-controls">
+                    <button class="btn btn-secondary" id="back-to-game-btn" aria-label="Back to game">
+                        Back to Game
+                    </button>
+                    <button class="btn btn-primary" id="new-session-btn" aria-label="Create new student session">
+                        New Student
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-main" role="main">
+            <!-- Sessions Overview -->
+            <section class="sessions-section" aria-label="Student sessions overview">
+                <div class="section-header">
+                    <h2>Active Sessions</h2>
+                    <div class="session-stats">
+                        <span class="stat-item">
+                            <span class="stat-number" id="total-sessions">0</span>
+                            <span class="stat-label">Students</span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-number" id="active-today">0</span>
+                            <span class="stat-label">Active Today</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="sessions-grid" id="sessions-grid" role="region" aria-label="List of student sessions">
+                    <!-- Session cards will be dynamically generated -->
+                </div>
+            </section>
+
+            <!-- Detailed Progress View -->
+            <section class="progress-detail-section" id="progress-detail" style="display: none;" aria-label="Detailed student progress">
+                <div class="section-header">
+                    <h2 id="student-name-title">Student Progress</h2>
+                    <div class="detail-controls">
+                        <button class="btn btn-secondary" id="back-to-overview-btn" aria-label="Back to sessions overview">
+                            Back to Overview
+                        </button>
+                        <button class="btn btn-primary" id="print-report-btn" aria-label="Print progress report">
+                            Print Report
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-detail-content">
+                    <div class="progress-summary">
+                        <div class="summary-card">
+                            <h3>Current Level</h3>
+                            <span class="summary-value" id="detail-level">1</span>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Words Completed</h3>
+                            <span class="summary-value" id="detail-words">0</span>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Accuracy</h3>
+                            <span class="summary-value" id="detail-accuracy">0%</span>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Time Played</h3>
+                            <span class="summary-value" id="detail-time">0 min</span>
+                        </div>
+                    </div>
+
+                    <div class="progress-charts">
+                        <div class="chart-container">
+                            <h3>Progress Over Time</h3>
+                            <div class="chart-placeholder" id="progress-chart">
+                                Chart will be rendered here
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Error Patterns</h3>
+                            <div class="error-patterns" id="error-patterns">
+                                <!-- Error pattern analysis will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- New Session Modal -->
+        <div class="modal-overlay" id="new-session-modal" role="dialog" aria-modal="true" aria-labelledby="new-session-title">
+            <div class="modal-content">
+                <h2 id="new-session-title" class="modal-title">Create New Student Session</h2>
+                <form id="new-session-form" class="session-form">
+                    <div class="form-group">
+                        <label for="student-name-input" class="form-label">Student Name</label>
+                        <input 
+                            type="text" 
+                            id="student-name-input" 
+                            class="form-input" 
+                            placeholder="Enter student name"
+                            required
+                            aria-describedby="name-help"
+                        >
+                        <small id="name-help" class="form-help">Enter the student's first name or identifier</small>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-session-btn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Session</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/error-handler.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/teacher.js"></script>
+    <script>
+        // Initialize the teacher dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            window.teacherDashboard = new TeacherDashboard();
+        });
+    </script>
+</body>
+</html>
