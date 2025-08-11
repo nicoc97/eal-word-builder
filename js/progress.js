@@ -250,8 +250,8 @@ class ProgressTracker {
         if (window.location.port === '8000' || window.location.href.includes('localhost:8000')) {
             return 'api/';
         }
-        // If we're on a different port or host, construct the full URL
-        return `http://localhost:8000/api/`;
+        // If we're on Railway production, use relative path
+        return 'api/';
     }
 
     /**
