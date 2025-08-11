@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Loading Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Loading Issue</h1>
+    
+    <div class="debug-section">
+        <h2>1. API Test</h2>
+        <button onclick="testAPI()">Test API Connection</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>2. JavaScript Loading Test</h2>
+        <button onclick="testJSLoading()">Test JS Components</button>
+        <div id="js-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>3. Game Initialization Test</h2>
+        <button onclick="testGameInit()">Test Game Init</button>
+        <div id="game-result"></div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('api-result');
+            result.innerHTML = '<p>Testing API...</p>';
+            
+            try {
+                const response = await fetch('api/index.php?endpoint=words&level=1');
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.innerHTML = `<p class="success">✓ API working! Got ${data.data.words.length} words</p>`;
+                } else {
+                    result.innerHTML = `<p class="error">✗ API error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ API connection failed: ${error.message}</p>`;
+            }
+        }
+        
+        async function testJSLoading() {
+            const result = document.getElementById('js-result');
+            const components = [];
+            
+            // Test if components are loaded
+            if (typeof FrontendErrorHandler !== 'undefined') {
+                components.push('✓ FrontendErrorHandler');
+            } else {
+                components.push('✗ FrontendErrorHandler missing');
+            }
+            
+            if (typeof TouchHandler !== 'undefined') {
+                components.push('✓ TouchHandler');
+            } else {
+                components.push('✗ TouchHandler missing');
+            }
+            
+            if (typeof AudioManager !== 'undefined') {
+                components.push('✓ AudioManager');
+            } else {
+                components.push('✗ AudioManager missing');
+            }
+            
+            if (typeof ProgressTracker !== 'undefined') {
+                components.push('✓ ProgressTracker');
+            } else {
+                components.push('✗ ProgressTracker missing');
+            }
+            
+            result.innerHTML = '<pre>' + components.join('\n') + '</pre>';
+        }
+        
+        async function testGameInit() {
+            const result = document.getElementById('game-result');
+            result.innerHTML = '<p>Testing game initialization...</p>';
+            
+            try {
+                // Load required scripts first
+                await loadScript('js/error-handler.js');
+                await loadScript('js/touch-handler.js');
+                await loadScript('js/responsive-tester.js');
+                await loadScript('js/orientation-handler.js');
+                await loadScript('js/performance-optimizer.js');
+                await loadScript('js/ui.js');
+                await loadScript('js/audio.js');
+                await loadScript('js/progress.js');
+                await loadScript('js/game.js');
+                
+                // Wait a moment for everything to initialize
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Try to create game instance
+                if (typeof WordBuilderGame !== 'undefined') {
+                    result.innerHTML += '<p class="success">✓ WordBuilderGame class available</p>';
+                    
+                    // Test creating instance (but don't initialize fully)
+                    const testGame = new WordBuilderGame();
+                    result.innerHTML += '<p class="success">✓ Game instance created successfully</p>';
+                } else {
+                    result.innerHTML += '<p class="error">✗ WordBuilderGame class not found</p>';
+                }
+                
+            } catch (error) {
+                result.innerHTML += `<p class="error">✗ Game init failed: ${error.message}</p>`;
+                console.error('Game init error:', error);
+            }
+        }
+        
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+    </script>
+</body>
+</html>

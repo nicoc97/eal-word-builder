@@ -41,6 +41,7 @@ class ProgressTracker {
         this.sessionId = null;  // Don't generate yet - wait for init()
         this.isOnline = navigator.onLine;
         this.syncInProgress = false;
+        this.initInProgress = false; // Prevent multiple init calls
         this.lastSyncAttempt = null;
         this.syncRetryCount = 0;
         this.maxRetries = 3;
@@ -89,61 +90,76 @@ class ProgressTracker {
      * consistent session ID across all components
      */
     async init() {
-        // Set up online/offline event listeners (passive setup)
-        this.setupNetworkListeners();
-
-        /**
-         * CRITICAL FIX: Load existing session before generating new one
-         * This is the key to preventing duplicate sessions
-         */
-        await this.loadFromLocal();
-
-        /**
-         * SESSION GENERATION LOGIC
-         * Only generate a new session if we don't have one from local storage
-         * This ensures session persistence across page reloads
-         */
-        if (!this.sessionId) {
-            this.sessionId = this.generateSessionId();
-            this.data.sessionId = this.sessionId;
-
-            // Save immediately to establish this as the canonical session
-            this.saveToLocal();
-
-            console.log('Generated new session:', this.sessionId);
-        } else {
-            console.log('Using existing session:', this.sessionId);
+        // Prevent multiple initialization calls
+        if (this.initInProgress) {
+            console.log('Init already in progress, skipping duplicate call');
+            return;
         }
+        
+        this.initInProgress = true;
 
-        /**
-         * SYNC TIMING FIX
-         * Only attempt sync AFTER session is established
-         * Add small delay to prevent race with WordBuilderGame initialization
-         */
-        if (this.isOnline) {
-            // Delay initial sync slightly to avoid collision with game init
-            setTimeout(() => {
-                if (!this.syncInProgress) {
-                    this.syncWithServer();
-                }
-            }, 100);
+        try {
+            // Set up online/offline event listeners (passive setup)
+            this.setupNetworkListeners();
+
+            /**
+             * CRITICAL FIX: Load existing session before generating new one
+             * This is the key to preventing duplicate sessions
+             */
+            await this.loadFromLocal();
+
+            /**
+             * SESSION GENERATION LOGIC
+             * Only generate a new session if we don't have one from local storage
+             * This ensures session persistence across page reloads
+             */
+            if (!this.sessionId) {
+                this.sessionId = this.generateSessionId();
+                this.data.sessionId = this.sessionId;
+
+                // Save immediately to establish this as the canonical session
+                this.saveToLocal();
+
+                console.log('Generated new session:', this.sessionId);
+            } else {
+                console.log('Using existing session:', this.sessionId);
+            }
+
+            /**
+             * SYNC TIMING FIX
+             * Only attempt sync AFTER session is established
+             * Add delay to prevent race with WordBuilderGame initialization
+             */
+            if (this.isOnline) {
+                // Delay initial sync to avoid collision with game init
+                setTimeout(() => {
+                    if (!this.syncInProgress && !this.initInProgress) {
+                        this.syncWithServer();
+                    }
+                }, 1500); // Increased delay to 1.5s for Railway cold start
+            }
+
+            // Set up periodic sync (passive - only syncs when needed)
+            this.setupPeriodicSync();
+
+            console.log('ProgressTracker initialized:', {
+                sessionId: this.sessionId,
+                isOnline: this.isOnline,
+                needsSync: this.data.needsSync
+            });
+        } finally {
+            this.initInProgress = false;
         }
-
-        // Set up periodic sync (passive - only syncs when needed)
-        this.setupPeriodicSync();
-
-        console.log('ProgressTracker initialized:', {
-            sessionId: this.sessionId,
-            isOnline: this.isOnline,
-            needsSync: this.data.needsSync
-        });
     }
 
     /**
      * Generate unique session ID
      */
     generateSessionId() {
-        return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+        // Use shorter format to stay under 100 char validation limit
+        const shortTimestamp = Date.now().toString(36);
+        const randomPart = Math.random().toString(36).substring(2, 8);
+        return 'session_' + shortTimestamp + '_' + randomPart;
     }
 
     /**
@@ -300,13 +316,14 @@ class ProgressTracker {
     /**
      * Record a word attempt for detailed analytics
      */
-    recordWordAttempt(word, level, success, timeTaken = 0, errorPattern = null) {
+    recordWordAttempt(word, level, success, timeTaken = 0, errorPattern = null, userInput = '') {
         const attempt = {
             word,
             level,
             success,
             timeTaken,
             errorPattern,
+            userInput,
             timestamp: new Date().toISOString()
         };
 
@@ -336,7 +353,7 @@ class ProgressTracker {
      * Sync progress with server
      */
     async syncWithServer() {
-        if (this.syncInProgress || !this.isOnline) {
+        if (this.syncInProgress || !this.isOnline || this.initInProgress) {
             return;
         }
 
@@ -376,47 +393,168 @@ class ProgressTracker {
      * Fetch progress from server
      */
     async fetchServerProgress() {
-        const response = await fetch(`api/index.php?endpoint=progress&sessionId=${this.sessionId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for Railway
+
+        try {
+            const response = await fetch(`api/progress/${this.sessionId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}`);
             }
-        });
 
-        if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}`);
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch progress');
+            }
+
+            // Transform API data to ProgressTracker format
+            return this.transformDataFromAPI(result.data || {});
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out after 30 seconds');
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Transform ProgressTracker data format to API format
+     */
+    transformDataForAPI(data) {
+        const apiData = {
+            session_id: data.sessionId,
+            level: data.level,
+            words_completed: data.wordsCompleted || 0,
+            total_attempts: data.totalAttempts || 0,
+            correct_attempts: data.correctAttempts || 0,
+            time_spent: data.timeSpent || 0,
+            current_streak: data.currentStreak || 0
+        };
+
+        // Include the most recent word attempt if available
+        if (data.wordAttempts && data.wordAttempts.length > 0) {
+            const lastAttempt = data.wordAttempts[data.wordAttempts.length - 1];
+            apiData.word_attempt = {
+                word: lastAttempt.word,
+                success: lastAttempt.success,
+                time_taken: lastAttempt.timeTaken || 0,
+                user_input: lastAttempt.userInput || ''
+            };
         }
 
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to fetch progress');
+        return apiData;
+    }
+
+    /**
+     * Transform API data format to ProgressTracker format
+     */
+    transformDataFromAPI(apiData) {
+        if (!apiData || typeof apiData !== 'object') {
+            return {};
         }
 
-        return result.data || {};
+        // Handle case where API returns an array of progress records
+        let progressData = apiData;
+        if (Array.isArray(apiData) && apiData.length > 0) {
+            // Use the most recent progress record (highest level or most recent)
+            progressData = apiData.reduce((latest, current) => {
+                const latestTime = new Date(latest.last_played || latest.created_at || 0);
+                const currentTime = new Date(current.last_played || current.created_at || 0);
+                return currentTime > latestTime ? current : latest;
+            });
+        }
+
+        // Handle case where API returns empty progress structure
+        if (progressData.session_id && !progressData.words_completed) {
+            return {
+                sessionId: progressData.session_id,
+                level: progressData.current_level || 1,
+                score: progressData.total_score || 0,
+                wordsCompleted: 0,
+                totalAttempts: 0,
+                correctAttempts: 0,
+                accuracy: 100,
+                currentStreak: 0,
+                bestStreak: 0,
+                timeSpent: 0,
+                timeStarted: new Date().toISOString(),
+                lastPlayed: new Date().toISOString(),
+                levelProgress: {},
+                wordAttempts: [],
+                needsSync: false,
+                version: 1
+            };
+        }
+
+        return {
+            sessionId: progressData.session_id,
+            level: progressData.level || 1,
+            score: progressData.score || 0,
+            wordsCompleted: progressData.words_completed || 0,
+            totalAttempts: progressData.total_attempts || 0,
+            correctAttempts: progressData.correct_attempts || 0,
+            accuracy: (progressData.accuracy !== undefined) ? progressData.accuracy * 100 : 100,
+            currentStreak: progressData.current_streak || 0,
+            bestStreak: progressData.best_streak || 0,
+            timeSpent: progressData.time_spent || 0,
+            timeStarted: progressData.time_started || progressData.created_at || new Date().toISOString(),
+            lastPlayed: progressData.last_played || new Date().toISOString(),
+            levelProgress: progressData.level_progress || {},
+            wordAttempts: progressData.word_attempts || [],
+            needsSync: false,
+            version: 1
+        };
     }
 
     /**
      * Save progress to server
      */
     async saveToServer(data) {
-        const response = await fetch('api/index.php?endpoint=progress', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout for Railway POST
 
-        if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}`);
+        try {
+            // Transform data to match API expectations
+            const apiData = this.transformDataForAPI(data);
+            
+            const response = await fetch('api/progress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(apiData),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to save progress');
+            }
+
+            return result.data;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error('Save request timed out after 45 seconds');
+            }
+            throw error;
         }
-
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to save progress');
-        }
-
-        return result.data;
     }
 
     /**
@@ -467,18 +605,31 @@ class ProgressTracker {
      * Handle sync errors with retry logic
      */
     handleSyncError(error) {
+        console.error('Sync error details:', error);
         this.syncRetryCount++;
 
-        if (this.syncRetryCount < this.maxRetries) {
-            const retryDelay = Math.pow(2, this.syncRetryCount) * 1000; // Exponential backoff
-            console.log(`Sync failed, retrying in ${retryDelay}ms (attempt ${this.syncRetryCount}/${this.maxRetries})`);
+        // Check if error is likely recoverable
+        const isRecoverable = error.message.includes('timed out') || 
+                            error.message.includes('Network Error') ||
+                            error.message.includes('Server responded with 5');
+
+        if (this.syncRetryCount < this.maxRetries && isRecoverable) {
+            const retryDelay = Math.pow(2, this.syncRetryCount) * 2000; // Longer exponential backoff
+            console.log(`Sync failed (${error.message}), retrying in ${retryDelay}ms (attempt ${this.syncRetryCount}/${this.maxRetries})`);
 
             setTimeout(() => {
                 this.syncWithServer();
             }, retryDelay);
         } else {
-            console.error('Max sync retries reached, will try again later');
-            this.showNetworkStatus('Sync failed - playing offline', 'warning');
+            console.error('Max sync retries reached or permanent error, will try again later');
+            this.showNetworkStatus(
+                this.syncRetryCount >= this.maxRetries ? 
+                    'Sync failed after retries - playing offline' : 
+                    `Sync error: ${error.message.substring(0, 50)}...`, 
+                'warning'
+            );
+            // Reset retry count for next attempt
+            this.syncRetryCount = 0;
         }
     }
 
@@ -644,38 +795,56 @@ class ProgressTracker {
 // Legacy ProgressManager for backward compatibility
 class ProgressManager {
     constructor() {
-        console.warn('ProgressManager is deprecated, use ProgressTracker instead');
         this.tracker = new ProgressTracker();
+        this._warningShown = false;
+    }
+
+    _showDeprecationWarning() {
+        // Deprecation warning disabled - ProgressTracker is now stable
+        // if (!this._warningShown) {
+        //     console.warn('ProgressManager is deprecated, use ProgressTracker instead');
+        //     this._warningShown = true;
+        // }
     }
 
     generateSessionId() {
+        this._showDeprecationWarning();
         return this.tracker.generateSessionId();
     }
 
     loadProgress() {
+        this._showDeprecationWarning();
         return this.tracker.loadFromLocal();
     }
 
     saveProgress() {
+        this._showDeprecationWarning();
         return this.tracker.saveToLocal();
     }
 
     updateProgress(updates) {
+        this._showDeprecationWarning();
         return this.tracker.updateProgress(updates);
     }
 
     getProgress() {
+        this._showDeprecationWarning();
         return this.tracker.getProgress();
     }
 
     reset() {
+        this._showDeprecationWarning();
         return this.tracker.reset();
     }
 }
 
-// Create global instances
-window.ProgressTracker = new ProgressTracker();
-window.ProgressManager = new ProgressManager(); // For backward compatibility
+// Create global instances (prevent duplicate creation)
+if (!window.ProgressTracker) {
+    window.ProgressTracker = new ProgressTracker();
+}
+if (!window.ProgressManager) {
+    window.ProgressManager = new ProgressManager(); // For backward compatibility
+}
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

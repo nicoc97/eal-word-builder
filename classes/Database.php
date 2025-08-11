@@ -34,9 +34,12 @@ class Database {
     }
     
     /**
-     * Load database configuration from Railway environment variables
+     * Load database configuration from environment variables with .env file support
      */
     private function loadConfig() {
+        // Load .env file if it exists (for local development)
+        $this->loadDotEnv();
+        
         // Railway provides these environment variables
         $this->host = $_ENV['MYSQL_HOST'] ?? getenv('MYSQL_HOST') ?? 'localhost';
         $this->database = $_ENV['MYSQL_DATABASE'] ?? getenv('MYSQL_DATABASE') ?? 'word_builder_game';
@@ -46,7 +49,7 @@ class Database {
         $this->charset = 'utf8mb4';
         
         // For local development, check DB_* variables as fallback
-        if ($this->host === 'localhost') {
+        if ($this->host === 'localhost' || empty(getenv('MYSQL_HOST'))) {
             $this->host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?? $this->host;
             $this->database = $_ENV['DB_DATABASE'] ?? getenv('DB_DATABASE') ?? $this->database;
             $this->username = $_ENV['DB_USERNAME'] ?? getenv('DB_USERNAME') ?? $this->username;
@@ -59,12 +62,44 @@ class Database {
     }
     
     /**
+     * Load .env file if it exists
+     */
+    private function loadDotEnv() {
+        $envFile = dirname(__DIR__) . '/.env';
+        if (file_exists($envFile)) {
+            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) {
+                    continue; // Skip comments
+                }
+                
+                list($name, $value) = explode('=', $line, 2);
+                $name = trim($name);
+                $value = trim($value);
+                
+                // Remove quotes if present
+                if (preg_match('/^".*"$/', $value) || preg_match('/^\'.*\'$/', $value)) {
+                    $value = substr($value, 1, -1);
+                }
+                
+                if (!array_key_exists($name, $_ENV)) {
+                    $_ENV[$name] = $value;
+                    putenv("$name=$value");
+                }
+            }
+        }
+    }
+    
+    /**
      * Establish PDO database connection
      */
     private function connect() {
         try {
+            // Force TCP connection for Docker - use 127.0.0.1 instead of localhost
+            $host = ($this->host === 'localhost') ? '127.0.0.1' : $this->host;
+            
             // Build DSN - keep host and port separate for Railway
-            $dsn = "mysql:host={$this->host};port={$this->port};dbname={$this->database};charset={$this->charset}";
+            $dsn = "mysql:host={$host};port={$this->port};dbname={$this->database};charset={$this->charset}";
             
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -251,6 +286,132 @@ class Database {
     }
     
     /**
+     * Create a record in the database
+     * 
+     * @param string $table Table name
+     * @param array $data Data to insert
+     * @return int|false Last insert ID or false on failure
+     */
+    public function create($table, $data) {
+        try {
+            if (empty($data)) {
+                return false;
+            }
+            
+            $fields = array_keys($data);
+            $placeholders = ':' . implode(', :', $fields);
+            $fieldList = implode(', ', $fields);
+            
+            $query = "INSERT INTO `{$table}` ({$fieldList}) VALUES ({$placeholders})";
+            
+            $params = [];
+            foreach ($data as $key => $value) {
+                $params[':' . $key] = $value;
+            }
+            
+            $this->execute($query, $params);
+            return $this->connection->lastInsertId();
+            
+        } catch (Exception $e) {
+            error_log("Failed to create record in {$table}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Read records from database with conditions
+     * 
+     * @param string $table Table name
+     * @param array $conditions Associative array of conditions
+     * @param string $orderBy Order by clause (optional)
+     * @param int $limit Limit results (optional)
+     * @return array Array of records
+     */
+    public function read($table, $conditions = [], $orderBy = null, $limit = null) {
+        try {
+            $query = "SELECT * FROM `{$table}`";
+            $params = [];
+            
+            if (!empty($conditions)) {
+                $whereClauses = [];
+                foreach ($conditions as $field => $value) {
+                    $whereClauses[] = "`{$field}` = :{$field}";
+                    $params[':' . $field] = $value;
+                }
+                $query .= " WHERE " . implode(' AND ', $whereClauses);
+            }
+            
+            if ($orderBy) {
+                $query .= " ORDER BY {$orderBy}";
+            }
+            
+            if ($limit) {
+                $query .= " LIMIT {$limit}";
+            }
+            
+            return $this->fetchAll($query, $params);
+            
+        } catch (Exception $e) {
+            error_log("Failed to read from {$table}: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Find a single record
+     * 
+     * @param string $table Table name
+     * @param array $conditions Conditions
+     * @return array|false Single record or false if not found
+     */
+    public function find($table, $conditions) {
+        $results = $this->read($table, $conditions, null, 1);
+        return !empty($results) ? $results[0] : false;
+    }
+    
+    /**
+     * Update records in database
+     * 
+     * @param string $table Table name
+     * @param array $data Data to update
+     * @param array $conditions Update conditions
+     * @return int Number of affected rows
+     */
+    public function updateRecord($table, $data, $conditions) {
+        try {
+            if (empty($data) || empty($conditions)) {
+                return 0;
+            }
+            
+            $setClauses = [];
+            $params = [];
+            
+            // Build SET clauses
+            foreach ($data as $field => $value) {
+                $setClauses[] = "`{$field}` = :set_{$field}";
+                $params[':set_' . $field] = $value;
+            }
+            
+            // Build WHERE clauses
+            $whereClauses = [];
+            foreach ($conditions as $field => $value) {
+                $whereClauses[] = "`{$field}` = :where_{$field}";
+                $params[':where_' . $field] = $value;
+            }
+            
+            $query = "UPDATE `{$table}` SET " . implode(', ', $setClauses) . 
+                     " WHERE " . implode(' AND ', $whereClauses);
+            
+            $stmt = $this->execute($query, $params);
+            return $stmt->rowCount();
+            
+        } catch (Exception $e) {
+            error_log("Failed to update {$table}: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
      * Create table helper for initial setup
      */
     public function createTablesIfNotExist() {
@@ -302,6 +463,62 @@ class Database {
         }
         
         return $created;
+    }
+    
+    /**
+     * Verify that all required tables exist with correct schema
+     * 
+     * @return bool True if schema is valid
+     */
+    public function verifySchema() {
+        try {
+            $requiredTables = ['sessions', 'progress', 'word_attempts'];
+            $existingTables = $this->getTableList();
+            
+            foreach ($requiredTables as $table) {
+                if (!in_array($table, $existingTables)) {
+                    error_log("Missing table: {$table}");
+                    return false;
+                }
+            }
+            
+            // Verify key columns exist
+            $progressColumns = $this->getTableColumns('progress');
+            $requiredProgressColumns = [
+                'session_id', 'level', 'words_completed', 
+                'total_attempts', 'correct_attempts', 'current_streak', 
+                'best_streak', 'time_spent'
+            ];
+            
+            foreach ($requiredProgressColumns as $column) {
+                if (!in_array($column, $progressColumns)) {
+                    error_log("Missing column in progress table: {$column}");
+                    return false;
+                }
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Schema verification failed: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get column names for a table
+     * 
+     * @param string $table Table name
+     * @return array Array of column names
+     */
+    public function getTableColumns($table) {
+        try {
+            $columns = $this->fetchAll("DESCRIBE `{$table}`");
+            return array_column($columns, 'Field');
+        } catch (Exception $e) {
+            error_log("Failed to get columns for table {$table}: " . $e->getMessage());
+            return [];
+        }
     }
     
     private function __clone() {}

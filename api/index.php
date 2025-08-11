@@ -1,7 +1,8 @@
 <?php
 
 // Legacy support for query parameter style requests
-if (isset($_GET['endpoint'])) {
+if (isset($_GET['endpoint']) && !defined('PROCESSING_LEGACY')) {
+    define('PROCESSING_LEGACY', true);
     include __DIR__ . '/legacy.php';
     exit;
 }
@@ -252,6 +253,7 @@ $errorHandler = ErrorHandler::getInstance();
  * API Response Helper Class
  * Standardizes API responses with consistent format and proper HTTP status codes
  */
+if (!class_exists('APIResponse')) {
 class APIResponse {
     
     /**
@@ -394,11 +396,13 @@ class APIResponse {
         return $data;
     }
 }
+}
 
 /**
  * API Router Class
  * Handles request routing, method validation, and parameter extraction
  */
+if (!class_exists('APIRouter')) {
 class APIRouter {
     
     private $method;
@@ -568,7 +572,7 @@ class APIRouter {
      * @return bool True if valid
      */
     private function isValidSessionId($sessionId) {
-        return preg_match('/^[a-zA-Z0-9-]{10,100}$/', $sessionId);
+        return preg_match('/^[a-zA-Z0-9_-]{10,100}$/', $sessionId);
     }
     
     /**
@@ -1046,19 +1050,24 @@ class APIRouter {
         }
         
         try {
-            // Get detailed progress
-            $progress = $this->progressManager->getProgress($sessionId);
-            
-            if ($progress === false) {
-                APIResponse::error('Session not found', 404);
-            }
-            
-            // Get session info
+            // Get session info first
             $db = Database::getInstance();
             $sessionInfo = $db->find('sessions', ['session_id' => $sessionId]);
             
             if (!$sessionInfo) {
                 APIResponse::error('Session not found', 404);
+            }
+            
+            // Get detailed progress (may be empty for new sessions)
+            $progress = $this->progressManager->getProgress($sessionId);
+            
+            // If no progress yet, return empty progress structure
+            if ($progress === false) {
+                $progress = [
+                    'current_level' => 1,
+                    'total_score' => 0,
+                    'levels' => []
+                ];
             }
             
             // Get recent word attempts for detailed analysis
@@ -1516,6 +1525,7 @@ class APIRouter {
     private function generateSessionId() {
         return 'session-' . uniqid() . '-' . bin2hex(random_bytes(4));
     }
+}
 }
 
 // Initialize and run the router

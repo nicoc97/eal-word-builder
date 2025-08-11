@@ -450,8 +450,7 @@ class WordManager {
     private function enhanceWordData($word, $level) {
         $enhanced = $word;
         
-        // Add image path
-        $enhanced['image'] = $this->getWordImage($word['word']);
+        // No longer adding image path - using emojis instead
         
         // Add difficulty analysis if not present
         if (!isset($enhanced['difficulty_analysis'])) {

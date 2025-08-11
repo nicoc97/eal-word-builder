@@ -232,6 +232,20 @@ body {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
+.word-emoji {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    user-select: none;
+    cursor: default;
+}
+
 .pronunciation-btn {
     position: absolute;
     top: 10px;
@@ -695,6 +709,12 @@ body {
         height: 150px;
     }
     
+    .word-emoji {
+        width: 150px;
+        height: 150px;
+        font-size: 6rem;
+    }
+    
     .letter-tile,
     .letter-slot {
         width: 50px;
@@ -774,6 +794,12 @@ body {
     .word-image {
         width: 120px;
         height: 120px;
+    }
+    
+    .word-emoji {
+        width: 120px;
+        height: 120px;
+        font-size: 5rem;
     }
     
     .letter-tile,
@@ -935,6 +961,12 @@ body {
     .word-image {
         width: 100px;
         height: 100px;
+    }
+    
+    .word-emoji {
+        width: 100px;
+        height: 100px;
+        font-size: 4rem;
     }
     
     .word-section {

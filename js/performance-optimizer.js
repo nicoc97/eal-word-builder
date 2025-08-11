@@ -376,23 +376,9 @@ class PerformanceOptimizer {
      * Preload critical resources
      */
     preloadCriticalResources() {
-        const criticalResources = [
-            { href: 'images/placeholder.svg', as: 'image' },
-            { href: 'api/index.php?endpoint=words&level=1', as: 'fetch' }
-        ];
-        
-        criticalResources.forEach(resource => {
-            const link = document.createElement('link');
-            link.rel = 'preload';
-            link.href = resource.href;
-            link.as = resource.as;
-            
-            if (resource.as === 'fetch') {
-                link.crossOrigin = 'anonymous';
-            }
-            
-            document.head.appendChild(link);
-        });
+        // Skip API preloading since the game initialization timing doesn't align
+        // with browser preload expectations. The game loads data on-demand during initialization.
+        console.debug('Skipping API preloading - using on-demand loading strategy');
     }
 
     /**
@@ -419,7 +405,7 @@ class PerformanceOptimizer {
      * Preload next level resources
      */
     preloadNextLevel(level) {
-        const nextLevelUrl = `api/index.php?endpoint=words&level=${level}`;
+        const nextLevelUrl = `api/words/${level}`;
         
         if (!this.loadedResources.has(nextLevelUrl)) {
             fetch(nextLevelUrl)
@@ -427,14 +413,8 @@ class PerformanceOptimizer {
                 .then(data => {
                     this.loadedResources.add(nextLevelUrl);
                     
-                    // Preload images for next level
-                    if (data.success && data.data.words) {
-                        data.data.words.forEach(word => {
-                            if (word.image) {
-                                this.preloadResource(word.image);
-                            }
-                        });
-                    }
+                    // Using emojis - no image preloading needed
+                    console.debug('Next level data preloaded (emoji-based visuals)');
                 })
                 .catch(error => {
                     console.warn('Failed to preload next level:', error);
@@ -610,7 +590,7 @@ class PerformanceOptimizer {
         try {
             // Test API response time
             const startTime = performance.now();
-            const response = await fetch('api/index.php?endpoint=words&level=1');
+            const response = await fetch('api/words/1');
             const endTime = performance.now();
             
             const responseTime = endTime - startTime;

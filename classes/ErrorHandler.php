@@ -244,8 +244,8 @@ class ErrorHandler {
      * @return bool True if valid
      */
     private function isValidSessionId($sessionId) {
-        // Session ID should be alphanumeric with hyphens, reasonable length
-        return preg_match('/^[a-zA-Z0-9-]{10,100}$/', $sessionId);
+        // Session ID should be alphanumeric with hyphens and underscores, reasonable length
+        return preg_match('/^[a-zA-Z0-9_-]{10,100}$/', $sessionId);
     }
     
     /**

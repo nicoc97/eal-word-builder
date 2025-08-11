@@ -5,7 +5,6 @@
   "words": [
     {
       "word": "cat",
-      "image": "images/words/cat.jpg",
       "phonetic": "/kæt/",
       "difficulty": 1,
       "category": "animals",
@@ -14,7 +13,6 @@
     },
     {
       "word": "dog",
-      "image": "images/words/dog.jpg",
       "phonetic": "/dɒɡ/",
       "difficulty": 1,
       "category": "animals",
@@ -23,7 +21,6 @@
     },
     {
       "word": "pen",
-      "image": "images/words/pen.jpg",
       "phonetic": "/pen/",
       "difficulty": 1,
       "category": "objects",
@@ -32,7 +29,6 @@
     },
     {
       "word": "cup",
-      "image": "images/words/cup.jpg",
       "phonetic": "/kʌp/",
       "difficulty": 1,
       "category": "objects",
@@ -41,16 +37,14 @@
     },
     {
       "word": "sun",
-      "image": "images/words/sun.jpg",
       "phonetic": "/sʌn/",
       "difficulty": 1,
-      "category": "objects",
+      "category": "nature",
       "letters": ["s", "u", "n"],
       "hints": "Bright light in the sky"
     },
     {
       "word": "bat",
-      "image": "images/words/bat.jpg",
       "phonetic": "/bæt/",
       "difficulty": 1,
       "category": "animals",
@@ -59,7 +53,6 @@
     },
     {
       "word": "hat",
-      "image": "images/words/hat.jpg",
       "phonetic": "/hæt/",
       "difficulty": 1,
       "category": "objects",
@@ -68,7 +61,6 @@
     },
     {
       "word": "run",
-      "image": "images/words/run.jpg",
       "phonetic": "/rʌn/",
       "difficulty": 1,
       "category": "actions",
@@ -77,7 +69,6 @@
     },
     {
       "word": "sit",
-      "image": "images/words/sit.jpg",
       "phonetic": "/sɪt/",
       "difficulty": 1,
       "category": "actions",
@@ -86,7 +77,6 @@
     },
     {
       "word": "big",
-      "image": "images/words/big.jpg",
       "phonetic": "/bɪɡ/",
       "difficulty": 1,
       "category": "objects",

@@ -120,7 +120,7 @@ class TeacherDashboard {
             const data = await response.json();
             
             if (data.success) {
-                this.sessions = data.data || [];
+                this.sessions = Array.isArray(data.data) ? data.data : [];
                 this.updateSessionsDisplay();
                 this.updateStats();
                 console.log(`Loaded ${this.sessions.length} sessions from API`);
@@ -583,9 +583,14 @@ class TeacherDashboard {
      * Update detail view with comprehensive session data
      */
     updateDetailView(sessionData) {
-        const sessionInfo = sessionData.session_info;
-        const progressData = sessionData.progress_data;
-        const analytics = sessionData.analytics;
+        if (!sessionData) {
+            console.error('No session data provided to updateDetailView');
+            return;
+        }
+        
+        const sessionInfo = sessionData.session_info || {};
+        const progressData = sessionData.progress_data || {};
+        const analytics = sessionData.analytics || {};
 
         // Update header
         const titleElement = document.getElementById('student-name-title');

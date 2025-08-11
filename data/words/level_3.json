@@ -5,7 +5,6 @@
   "words": [
     {
       "word": "horse",
-      "image": "images/words/horse.jpg",
       "phonetic": "/hɔːrs/",
       "difficulty": 3,
       "category": "animals",
@@ -14,7 +13,6 @@
     },
     {
       "word": "mouse",
-      "image": "images/words/mouse.jpg",
       "phonetic": "/maʊs/",
       "difficulty": 3,
       "category": "animals",
@@ -23,7 +21,6 @@
     },
     {
       "word": "snake",
-      "image": "images/words/snake.jpg",
       "phonetic": "/sneɪk/",
       "difficulty": 3,
       "category": "animals",
@@ -32,7 +29,6 @@
     },
     {
       "word": "house",
-      "image": "images/words/house.jpg",
       "phonetic": "/haʊs/",
       "difficulty": 3,
       "category": "objects",
@@ -41,7 +37,6 @@
     },
     {
       "word": "chair",
-      "image": "images/words/chair.jpg",
       "phonetic": "/tʃeər/",
       "difficulty": 3,
       "category": "objects",
@@ -50,7 +45,6 @@
     },
     {
       "word": "table",
-      "image": "images/words/table.jpg",
       "phonetic": "/teɪbəl/",
       "difficulty": 3,
       "category": "objects",
@@ -59,16 +53,14 @@
     },
     {
       "word": "water",
-      "image": "images/words/water.jpg",
       "phonetic": "/wɔːtər/",
       "difficulty": 3,
-      "category": "objects",
+      "category": "nature",
       "letters": ["w", "a", "t", "e", "r"],
       "hints": "Clear liquid you drink"
     },
     {
       "word": "smile",
-      "image": "images/words/smile.jpg",
       "phonetic": "/smaɪl/",
       "difficulty": 3,
       "category": "actions",
@@ -77,7 +69,6 @@
     },
     {
       "word": "sleep",
-      "image": "images/words/sleep.jpg",
       "phonetic": "/sliːp/",
       "difficulty": 3,
       "category": "actions",
@@ -86,7 +77,6 @@
     },
     {
       "word": "dance",
-      "image": "images/words/dance.jpg",
       "phonetic": "/dæns/",
       "difficulty": 3,
       "category": "actions",
@@ -95,19 +85,17 @@
     },
     {
       "word": "green",
-      "image": "images/words/green.jpg",
       "phonetic": "/ɡriːn/",
       "difficulty": 3,
-      "category": "objects",
+      "category": "colors",
       "letters": ["g", "r", "e", "e", "n"],
       "hints": "Color of grass and leaves"
     },
     {
       "word": "happy",
-      "image": "images/words/happy.jpg",
       "phonetic": "/hæpi/",
       "difficulty": 3,
-      "category": "objects",
+      "category": "emotions",
       "letters": ["h", "a", "p", "p", "y"],
       "hints": "Feeling good and joyful"
     }

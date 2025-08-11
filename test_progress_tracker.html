@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProgressTracker Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>ProgressTracker Test</h1>
+    
+    <div class="test-section">
+        <h2>1. ProgressTracker Initialization</h2>
+        <button onclick="testInit()">Test Initialization</button>
+        <div id="init-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Progress Update</h2>
+        <button onclick="testProgressUpdate()">Test Progress Update</button>
+        <div id="update-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Word Attempt Recording</h2>
+        <button onclick="testWordAttempt()">Test Word Attempt</button>
+        <div id="attempt-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Server Sync</h2>
+        <button onclick="testSync()">Test Server Sync</button>
+        <div id="sync-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Current Progress Data</h2>
+        <button onclick="showProgress()">Show Current Progress</button>
+        <div id="progress-result"></div>
+    </div>
+
+    <script src="js/progress.js"></script>
+    <script>
+        let tracker;
+
+        async function testInit() {
+            const result = document.getElementById('init-result');
+            result.innerHTML = '<p>Testing ProgressTracker initialization...</p>';
+            
+            try {
+                // Wait for global ProgressTracker to initialize
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                if (window.ProgressTracker) {
+                    tracker = window.ProgressTracker;
+                    const progress = tracker.getProgress();
+                    
+                    result.innerHTML = `
+                        <p class="success">✓ ProgressTracker initialized successfully</p>
+                        <p>Session ID: ${progress.sessionId}</p>
+                        <p>Level: ${progress.level}</p>
+                        <p>Online: ${!tracker.isOffline()}</p>
+                    `;
+                } else {
+                    result.innerHTML = '<p class="error">✗ ProgressTracker not found</p>';
+                }
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Initialization failed: ${error.message}</p>`;
+            }
+        }
+        
+        async function testProgressUpdate() {
+            const result = document.getElementById('update-result');
+            
+            if (!tracker) {
+                result.innerHTML = '<p class="error">✗ Please initialize ProgressTracker first</p>';
+                return;
+            }
+            
+            try {
+                tracker.updateProgress({
+                    wordsCompleted: 5,
+                    totalAttempts: 8,
+                    correctAttempts: 6,
+                    timeSpent: 120,
+                    currentStreak: 3
+                });
+                
+                const progress = tracker.getProgress();
+                result.innerHTML = `
+                    <p class="success">✓ Progress updated successfully</p>
+                    <pre>${JSON.stringify(progress, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Update failed: ${error.message}</p>`;
+            }
+        }
+        
+        async function testWordAttempt() {
+            const result = document.getElementById('attempt-result');
+            
+            if (!tracker) {
+                result.innerHTML = '<p class="error">✗ Please initialize ProgressTracker first</p>';
+                return;
+            }
+            
+            try {
+                tracker.recordWordAttempt('cat', 1, true, 5, null, 'cat');
+                tracker.recordWordAttempt('dog', 1, false, 8, 'spelling', 'dgo');
+                
+                const progress = tracker.getProgress();
+                result.innerHTML = `
+                    <p class="success">✓ Word attempts recorded successfully</p>
+                    <p>Total Attempts: ${progress.totalAttempts}</p>
+                    <p>Correct Attempts: ${progress.correctAttempts}</p>
+                    <p>Current Streak: ${progress.currentStreak}</p>
+                    <p>Accuracy: ${progress.accuracy.toFixed(1)}%</p>
+                `;
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Word attempt failed: ${error.message}</p>`;
+            }
+        }
+        
+        async function testSync() {
+            const result = document.getElementById('sync-result');
+            result.innerHTML = '<p>Testing server sync...</p>';
+            
+            if (!tracker) {
+                result.innerHTML = '<p class="error">✗ Please initialize ProgressTracker first</p>';
+                return;
+            }
+            
+            try {
+                const success = await tracker.forceSync();
+                
+                if (success) {
+                    result.innerHTML = '<p class="success">✓ Server sync successful</p>';
+                } else {
+                    result.innerHTML = '<p class="warning">⚠ Sync failed (offline mode)</p>';
+                }
+                
+                const syncStatus = tracker.getSyncStatus();
+                result.innerHTML += `<pre>${JSON.stringify(syncStatus, null, 2)}</pre>`;
+                
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Sync failed: ${error.message}</p>`;
+            }
+        }
+        
+        async function showProgress() {
+            const result = document.getElementById('progress-result');
+            
+            if (!tracker) {
+                result.innerHTML = '<p class="error">✗ Please initialize ProgressTracker first</p>';
+                return;
+            }
+            
+            try {
+                const progress = tracker.getProgress();
+                result.innerHTML = `<pre>${JSON.stringify(progress, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<p class="error">✗ Failed to get progress: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-initialize on page load
+        window.addEventListener('load', () => {
+            setTimeout(testInit, 500);
+        });
+    </script>
+</body>
+</html>

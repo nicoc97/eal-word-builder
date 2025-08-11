@@ -5,7 +5,6 @@
   "words": [
     {
       "word": "frog",
-      "image": "images/words/frog.jpg",
       "phonetic": "/frɒɡ/",
       "difficulty": 2,
       "category": "animals",
@@ -14,7 +13,6 @@
     },
     {
       "word": "fish",
-      "image": "images/words/fish.jpg",
       "phonetic": "/fɪʃ/",
       "difficulty": 2,
       "category": "animals",
@@ -23,7 +21,6 @@
     },
     {
       "word": "bird",
-      "image": "images/words/bird.jpg",
       "phonetic": "/bɜːrd/",
       "difficulty": 2,
       "category": "animals",
@@ -32,7 +29,6 @@
     },
     {
       "word": "book",
-      "image": "images/words/book.jpg",
       "phonetic": "/bʊk/",
       "difficulty": 2,
       "category": "objects",
@@ -41,7 +37,6 @@
     },
     {
       "word": "milk",
-      "image": "images/words/milk.jpg",
       "phonetic": "/mɪlk/",
       "difficulty": 2,
       "category": "objects",
@@ -50,16 +45,14 @@
     },
     {
       "word": "hand",
-      "image": "images/words/hand.jpg",
       "phonetic": "/hænd/",
       "difficulty": 2,
-      "category": "objects",
+      "category": "body",
       "letters": ["h", "a", "n", "d"],
       "hints": "You have five fingers on this"
     },
     {
       "word": "jump",
-      "image": "images/words/jump.jpg",
       "phonetic": "/dʒʌmp/",
       "difficulty": 2,
       "category": "actions",
@@ -68,7 +61,6 @@
     },
     {
       "word": "walk",
-      "image": "images/words/walk.jpg",
       "phonetic": "/wɔːk/",
       "difficulty": 2,
       "category": "actions",
@@ -77,7 +69,6 @@
     },
     {
       "word": "help",
-      "image": "images/words/help.jpg",
       "phonetic": "/help/",
       "difficulty": 2,
       "category": "actions",
@@ -86,7 +77,6 @@
     },
     {
       "word": "play",
-      "image": "images/words/play.jpg",
       "phonetic": "/pleɪ/",
       "difficulty": 2,
       "category": "actions",
@@ -95,19 +85,17 @@
     },
     {
       "word": "tree",
-      "image": "images/words/tree.jpg",
       "phonetic": "/triː/",
       "difficulty": 2,
-      "category": "objects",
+      "category": "nature",
       "letters": ["t", "r", "e", "e"],
       "hints": "Tall plant with leaves and branches"
     },
     {
       "word": "blue",
-      "image": "images/words/blue.jpg",
       "phonetic": "/bluː/",
       "difficulty": 2,
-      "category": "objects",
+      "category": "colors",
       "letters": ["b", "l", "u", "e"],
       "hints": "Color of the sky"
     }

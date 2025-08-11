@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Header -->
@@ -16,7 +18,8 @@
             <div class="header-content">
                 <h1 class="game-title">Word Builder</h1>
                 <div class="header-controls">
-                    <button class="btn btn-secondary btn-small" id="sync-btn" aria-label="Sync progress" title="Sync progress with server">
+                    <button class="btn btn-secondary btn-small" id="sync-btn" aria-label="Sync progress"
+                        title="Sync progress with server">
                         🔄
                     </button>
                     <button class="btn btn-secondary" id="teacher-btn" aria-label="Open teacher dashboard">
@@ -39,7 +42,8 @@
                         <span class="level-number" id="current-level">1</span>
                     </div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+                            aria-valuemax="100">
                             <div class="progress-fill" id="progress-fill"></div>
                         </div>
                         <span class="progress-text" id="progress-text">0/10 words</span>
@@ -55,12 +59,14 @@
             <section class="word-section" aria-label="Current word">
                 <div class="word-container">
                     <div class="word-image-container">
-                        <img id="word-image" data-src="images/placeholder.svg" alt="Word image" class="word-image" loading="lazy" />
+                        <img id="word-image" data-src="images/placeholder.svg" alt="Word image" class="word-image"
+                            loading="lazy" />
                         <button class="pronunciation-btn" id="pronunciation-btn" aria-label="Play word pronunciation">
                             🔊
                         </button>
                     </div>
-                    <div class="word-target" id="word-target" role="region" aria-label="Drop letters here to build the word">
+                    <div class="word-target" id="word-target" role="region"
+                        aria-label="Drop letters here to build the word">
                         <!-- Letter slots will be dynamically generated -->
                     </div>
                 </div>
@@ -68,7 +74,8 @@
 
             <!-- Letter Tiles Section -->
             <section class="letters-section" aria-label="Available letters">
-                <div class="letters-container" id="letters-container" role="region" aria-label="Drag these letters to build the word">
+                <div class="letters-container" id="letters-container" role="region"
+                    aria-label="Drag these letters to build the word">
                     <!-- Letter tiles will be dynamically generated -->
                 </div>
             </section>
@@ -112,7 +119,7 @@
                 <div class="modal-body">
                     <div class="settings-section">
                         <h3>Audio Controls</h3>
-                        
+
                         <div class="setting-item">
                             <label for="audio-enabled" class="setting-label">
                                 <input type="checkbox" id="audio-enabled" checked>
@@ -123,7 +130,8 @@
                         <div class="setting-item">
                             <label for="master-volume" class="setting-label">Master Volume</label>
                             <div class="volume-control">
-                                <input type="range" id="master-volume" min="0" max="100" value="100" class="volume-slider">
+                                <input type="range" id="master-volume" min="0" max="100" value="100"
+                                    class="volume-slider">
                                 <span class="volume-value" id="master-volume-value">100%</span>
                             </div>
                         </div>
@@ -131,7 +139,8 @@
                         <div class="setting-item">
                             <label for="speech-volume" class="setting-label">Speech Volume</label>
                             <div class="volume-control">
-                                <input type="range" id="speech-volume" min="0" max="100" value="100" class="volume-slider">
+                                <input type="range" id="speech-volume" min="0" max="100" value="100"
+                                    class="volume-slider">
                                 <span class="volume-value" id="speech-volume-value">100%</span>
                             </div>
                         </div>
@@ -139,7 +148,8 @@
                         <div class="setting-item">
                             <label for="effects-volume" class="setting-label">Sound Effects Volume</label>
                             <div class="volume-control">
-                                <input type="range" id="effects-volume" min="0" max="100" value="70" class="volume-slider">
+                                <input type="range" id="effects-volume" min="0" max="100" value="70"
+                                    class="volume-slider">
                                 <span class="volume-value" id="effects-volume-value">70%</span>
                             </div>
                         </div>
@@ -147,7 +157,8 @@
                         <div class="setting-item">
                             <label for="speech-rate" class="setting-label">Speech Speed</label>
                             <div class="volume-control">
-                                <input type="range" id="speech-rate" min="50" max="150" value="80" class="volume-slider">
+                                <input type="range" id="speech-rate" min="50" max="150" value="80"
+                                    class="volume-slider">
                                 <span class="volume-value" id="speech-rate-value">Normal</span>
                             </div>
                         </div>
@@ -179,6 +190,7 @@
 
     <!-- Scripts -->
     <script src="js/error-handler.js"></script>
+    <script src="js/emoji-mapper.js"></script>
     <script src="js/touch-handler.js"></script>
     <script src="js/responsive-tester.js"></script>
     <script src="js/orientation-handler.js"></script>
@@ -189,9 +201,10 @@
     <script src="js/game.js"></script>
     <script>
         // Initialize the game when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             window.game = new WordBuilderGame('app-container');
         });
     </script>
 </body>
+
 </html>

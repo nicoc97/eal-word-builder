@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple ProgressTracker Test</title>
+</head>
+<body>
+    <h1>ProgressTracker Test</h1>
+    <div id="output"></div>
+
+    <script src="js/progress.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        // Wait for ProgressTracker to initialize
+        setTimeout(async () => {
+            try {
+                if (window.ProgressTracker) {
+                    log('✓ ProgressTracker found');
+                    
+                    const progress = window.ProgressTracker.getProgress();
+                    log('Session ID: ' + progress.sessionId);
+                    log('Level: ' + progress.level);
+                    log('Words Completed: ' + progress.wordsCompleted);
+                    
+                    // Test updating progress
+                    window.ProgressTracker.updateProgress({
+                        wordsCompleted: 3,
+                        totalAttempts: 5,
+                        correctAttempts: 4
+                    });
+                    
+                    const updatedProgress = window.ProgressTracker.getProgress();
+                    log('Updated Words Completed: ' + updatedProgress.wordsCompleted);
+                    log('Updated Accuracy: ' + updatedProgress.accuracy.toFixed(1) + '%');
+                    
+                    // Test word attempt recording
+                    window.ProgressTracker.recordWordAttempt('cat', 1, true, 3, null, 'cat');
+                    window.ProgressTracker.recordWordAttempt('dog', 1, false, 5, 'spelling', 'dgo');
+                    
+                    const finalProgress = window.ProgressTracker.getProgress();
+                    log('Final Total Attempts: ' + finalProgress.totalAttempts);
+                    log('Final Correct Attempts: ' + finalProgress.correctAttempts);
+                    log('Final Accuracy: ' + finalProgress.accuracy.toFixed(1) + '%');
+                    
+                    log('✓ All tests completed successfully');
+                } else {
+                    log('✗ ProgressTracker not found');
+                }
+            } catch (error) {
+                log('✗ Error: ' + error.message);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

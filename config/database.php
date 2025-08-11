@@ -27,7 +27,7 @@ if ($isRailway) {
 } else {
     // Local development settings
     return [
-        'host' => getenv('DB_HOST') ?: 'localhost',
+        'host' => getenv('DB_HOST') ?: '127.0.0.1',
         'port' => getenv('DB_PORT') ?: '3306',
         'database' => getenv('DB_DATABASE') ?: 'word_builder_game',
         'username' => getenv('DB_USERNAME') ?: 'root',

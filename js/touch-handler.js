@@ -458,7 +458,7 @@ class TouchHandler {
         });
         
         if (violations.length > 0) {
-            console.warn('Touch target size violations found and fixed:', violations);
+            console.debug('Touch target size violations found and fixed:', violations);
         }
         
         return violations;

@@ -3,7 +3,18 @@
     "allow": [
       "Bash(php:*)",
       "Bash(curl:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(railway variables:*)",
+      "Bash(export:*)",
+      "Bash(railway shell:*)",
+      "Bash(mysql:*)",
+      "Bash(chmod:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(open:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

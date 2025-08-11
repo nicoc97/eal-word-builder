@@ -59,12 +59,18 @@ class ProgressManager {
             // Validate input data
             $this->validateProgressData($sessionId, $level, $progressData);
             
+            // Ensure session exists BEFORE creating progress records
+            $this->ensureSessionExists($sessionId);
+            
+            // Filter progress data to only include database fields
+            $filteredProgressData = $this->filterProgressData($progressData);
+            
             // Get existing progress for this session/level
             $existingProgress = $this->getProgress($sessionId, $level);
             
             if ($existingProgress) {
                 // Update existing progress record
-                $updatedData = $this->mergeProgressData($existingProgress, $progressData);
+                $updatedData = $this->mergeProgressData($existingProgress, $filteredProgressData);
                 
                 $this->db->updateRecord('progress', $updatedData, [
                     'session_id' => $sessionId,
@@ -81,7 +87,7 @@ class ProgressManager {
                     'current_streak' => 0,
                     'best_streak' => 0,
                     'time_spent' => 0
-                ], $progressData);
+                ], $filteredProgressData);
                 
                 $this->db->create('progress', $newProgressData);
             }
@@ -91,7 +97,7 @@ class ProgressManager {
                 $this->saveWordAttempt($sessionId, $progressData['word_attempt']);
             }
             
-            // Update session last_active timestamp
+            // Update last_active timestamp
             $this->updateSessionActivity($sessionId);
             
             $this->db->commit();
@@ -320,6 +326,28 @@ class ProgressManager {
     }
     
     /**
+     * Ensure session exists in database, create if not exists
+     * 
+     * @param string $sessionId Session identifier
+     */
+    private function ensureSessionExists($sessionId) {
+        // Check if session already exists
+        $existingSession = $this->db->find('sessions', ['session_id' => $sessionId]);
+        
+        if (!$existingSession) {
+            // Create session record with default values
+            $sessionData = [
+                'session_id' => $sessionId,
+                'student_name' => 'Anonymous Player', // Default name for client-generated sessions
+                'created_at' => date('Y-m-d H:i:s'),
+                'last_active' => date('Y-m-d H:i:s')
+            ];
+            
+            $this->db->create('sessions', $sessionData);
+        }
+    }
+
+    /**
      * Update session activity timestamp
      * 
      * @param string $sessionId Session identifier
@@ -329,6 +357,34 @@ class ProgressManager {
             ['last_active' => date('Y-m-d H:i:s')], 
             ['session_id' => $sessionId]
         );
+    }
+    
+    /**
+     * Filter progress data to only include database fields
+     * 
+     * @param array $progressData Progress data from client
+     * @return array Filtered progress data with only database fields
+     */
+    private function filterProgressData($progressData) {
+        $validFields = [
+            'words_completed',
+            'total_attempts', 
+            'correct_attempts',
+            'current_streak',
+            'best_streak',
+            'time_spent'
+            // Note: 'accuracy' is calculated, not stored
+            // Note: 'word_attempt' is processed separately
+        ];
+        
+        $filtered = [];
+        foreach ($validFields as $field) {
+            if (isset($progressData[$field])) {
+                $filtered[$field] = $progressData[$field];
+            }
+        }
+        
+        return $filtered;
     }
     
     /**
@@ -366,16 +422,29 @@ class ProgressManager {
      * 
      * @param array $existing Existing progress data
      * @param array $new New progress data
-     * @return array Merged progress data
+     * @return array Merged progress data (only database fields)
      */
     private function mergeProgressData($existing, $new) {
-        $merged = $existing;
+        // Start with existing data but remove calculated fields
+        $merged = [];
+        $databaseFields = [
+            'session_id', 'level', 'words_completed', 'total_attempts', 
+            'correct_attempts', 'current_streak', 'best_streak', 'time_spent',
+            'last_played', 'created_at'
+        ];
+        
+        // Copy only database fields from existing data
+        foreach ($databaseFields as $field) {
+            if (isset($existing[$field])) {
+                $merged[$field] = $existing[$field];
+            }
+        }
         
         // Add incremental values
         $incrementalFields = ['words_completed', 'total_attempts', 'correct_attempts', 'time_spent'];
         foreach ($incrementalFields as $field) {
             if (isset($new[$field])) {
-                $merged[$field] = ($existing[$field] ?? 0) + $new[$field];
+                $merged[$field] = ($merged[$field] ?? 0) + $new[$field];
             }
         }
         
@@ -385,7 +454,7 @@ class ProgressManager {
         }
         
         // Update best streak if current is better
-        if (isset($new['current_streak']) && $new['current_streak'] > ($existing['best_streak'] ?? 0)) {
+        if (isset($new['current_streak']) && $new['current_streak'] > ($merged['best_streak'] ?? 0)) {
             $merged['best_streak'] = $new['current_streak'];
         }
         

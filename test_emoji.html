@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .emoji-test {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .word-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .emoji {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        .word {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Emoji Mapper Test</h1>
+    <div class="emoji-test" id="emoji-test"></div>
+
+    <script src="js/emoji-mapper.js"></script>
+    <script>
+        // Test words
+        const testWords = [
+            'cat', 'dog', 'fish', 'sun', 'tree', 'house', 'car', 'apple', 
+            'book', 'pen', 'cup', 'hat', 'ball', 'star', 'flower', 'bird'
+        ];
+
+        const container = document.getElementById('emoji-test');
+
+        testWords.forEach(word => {
+            const emoji = window.EmojiMapper.getEmoji(word);
+            
+            const card = document.createElement('div');
+            card.className = 'word-card';
+            
+            card.innerHTML = `
+                <div class="emoji">${emoji}</div>
+                <div class="word">${word}</div>
+            `;
+            
+            container.appendChild(card);
+        });
+
+        console.log('Emoji mapper test loaded');
+        console.log('Available mappings:', Object.keys(window.EmojiMapper.getAllMappings()).length);
+    </script>
+</body>
+</html>
