@@ -1,5 +1,13 @@
 {
     "require": {
-        "php": "^8.0"
+        "php": "^8.2",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-json": "*"
+    },
+    "config": {
+        "platform": {
+            "php": "8.2"
+        }
     }
 }
