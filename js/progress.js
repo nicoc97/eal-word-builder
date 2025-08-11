@@ -167,6 +167,10 @@ class ProgressTracker {
 
         console.log('Loading specific session:', sessionId);
         
+        // CRITICAL FIX: Stop any ongoing initialization to prevent race condition
+        // This prevents the init() method from creating a duplicate anonymous session
+        this.initInProgress = false;
+        
         try {
             // Set the session ID immediately
             this.sessionId = sessionId;
