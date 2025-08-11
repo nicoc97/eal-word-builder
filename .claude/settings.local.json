@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(php:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
