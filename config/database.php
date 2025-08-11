@@ -1,43 +1,42 @@
 <?php
-
 /**
- * Database Configuration for Word Builder Game
+ * Database Configuration for Railway Deployment
  * 
- * This configuration file provides database connection settings for the EAL
- * word building game. It supports both development and production environments
- * with secure credential management.
- * 
- * For production deployment:
- * - Use environment variables instead of this file
- * - Ensure proper file permissions (600)
- * - Never commit credentials to version control
+ * This configuration automatically detects Railway environment variables
+ * Falls back to local development settings when not on Railway
  */
 
-return [
-    // Database connection settings
-    'host' => getenv('DB_HOST') ?: (getenv('MYSQL_HOST') ?: 'localhost'),
-    'database' => getenv('DB_DATABASE') ?: (getenv('MYSQL_DATABASE') ?: 'word_builder_game'),
-    'username' => getenv('DB_USERNAME') ?: (getenv('MYSQL_USER') ?: 'root'),
-    'password' => getenv('DB_PASSWORD') ?: (getenv('MYSQL_PASSWORD') ?: ''),
-    'charset' => 'utf8mb4',
-    
-    // Connection options for performance and security
-    'options' => [
-        'persistent' => true, // Enable connection pooling
-        'timeout' => 30, // Connection timeout in seconds
-        'ssl_verify' => false // Set to true in production with proper SSL setup
-    ],
-    
-    // Development vs Production settings
-    'environment' => [
-        'development' => [
-            'debug' => true,
-            'log_queries' => true
-        ],
-        'production' => [
-            'debug' => false,
-            'log_queries' => false,
-            'ssl_required' => true
+// Detect Railway environment
+$isRailway = getenv('RAILWAY_ENVIRONMENT') !== false || getenv('MYSQL_HOST') !== false;
+
+if ($isRailway) {
+    // Railway production settings
+    return [
+        'host' => getenv('MYSQL_HOST'),
+        'port' => getenv('MYSQL_PORT') ?: '3306',
+        'database' => getenv('MYSQL_DATABASE'),
+        'username' => getenv('MYSQL_USER'),
+        'password' => getenv('MYSQL_PASSWORD'),
+        'charset' => 'utf8mb4',
+        'options' => [
+            'persistent' => false,  // Don't use persistent connections on Railway
+            'timeout' => 30,
+            'ssl_verify' => false   // Railway internal network doesn't need SSL
         ]
-    ]
-];
+    ];
+} else {
+    // Local development settings
+    return [
+        'host' => getenv('DB_HOST') ?: 'localhost',
+        'port' => getenv('DB_PORT') ?: '3306',
+        'database' => getenv('DB_DATABASE') ?: 'word_builder_game',
+        'username' => getenv('DB_USERNAME') ?: 'root',
+        'password' => getenv('DB_PASSWORD') ?: '',
+        'charset' => 'utf8mb4',
+        'options' => [
+            'persistent' => true,
+            'timeout' => 30,
+            'ssl_verify' => false
+        ]
+    ];
+}
