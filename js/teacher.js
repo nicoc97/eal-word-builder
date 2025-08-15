@@ -84,7 +84,7 @@ class TeacherDashboard {
             // Update button text to reflect landing page navigation
             backToGameBtn.textContent = 'Back to Landing';
             backToGameBtn.title = 'Return to landing page';
-            
+
             backToGameBtn.addEventListener('click', () => {
                 window.location.href = 'index.html';
             });
@@ -175,18 +175,20 @@ class TeacherDashboard {
     async loadAllSessions() {
         try {
             this.showLoading(true);
-            
+
             console.log('TeacherDashboard: Loading sessions from:', `${this.apiBaseUrl}teacher/sessions`);
             const response = await fetch(`${this.apiBaseUrl}teacher/sessions`);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
-                this.sessions = Array.isArray(data.data.sessions) ? data.data.sessions : [];
+                // Ensure we have a valid data structure
+                const sessionsData = data.data || {};
+                this.sessions = Array.isArray(sessionsData.sessions) ? sessionsData.sessions : [];
                 console.log('TeacherDashboard: Raw API response:', data);
                 console.log('TeacherDashboard: Extracted sessions:', this.sessions);
                 this.updateSessionsDisplay();
@@ -195,10 +197,19 @@ class TeacherDashboard {
             } else {
                 throw new Error(data.error || 'Failed to load sessions');
             }
-            
+
         } catch (error) {
             console.error('Failed to load sessions:', error);
-            
+
+            // Check if this is just an empty response after delete operation
+            if (error.message.includes('HTTP 200') || error.message.includes('success')) {
+                // This might be a successful empty response, just set empty sessions
+                this.sessions = [];
+                this.updateSessionsDisplay();
+                this.updateStats();
+                return;
+            }
+
             // Use enhanced error handler if available
             if (window.FrontendErrorHandler) {
                 window.FrontendErrorHandler.showUserFriendlyError(
@@ -210,7 +221,7 @@ class TeacherDashboard {
             } else {
                 this.showError('Unable to load student sessions. Please check your connection.');
             }
-            
+
             // Fallback to localStorage for offline functionality
             this.loadSessionsFromStorage();
         } finally {
@@ -300,7 +311,7 @@ class TeacherDashboard {
                     }
                 }
             );
-            
+
             if (!validation.valid) {
                 window.FrontendErrorHandler.showUserFriendlyError(
                     'Invalid name',
@@ -324,7 +335,7 @@ class TeacherDashboard {
 
         try {
             this.showLoading(true);
-            
+
             const response = await fetch(`${this.apiBaseUrl}teacher/session`, {
                 method: 'POST',
                 headers: {
@@ -371,16 +382,16 @@ class TeacherDashboard {
                 } else {
                     this.showMessage(`Session created for ${studentName}!`, 'success');
                 }
-                
+
                 console.log('New session created:', data.data);
-                
+
             } else {
                 throw new Error(data.error || 'Failed to create session');
             }
 
         } catch (error) {
             console.error('Failed to create session:', error);
-            
+
             // Use enhanced error handling
             if (window.FrontendErrorHandler) {
                 window.FrontendErrorHandler.showUserFriendlyError(
@@ -495,28 +506,28 @@ class TeacherDashboard {
         try {
             this.showLoading(true);
             this.currentView = 'detail';
-            
+
             const response = await fetch(`${this.apiBaseUrl}teacher/progress/${sessionId}`);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.currentSession = data.data;
                 this.showDetailView();
                 this.updateDetailView(data.data);
-                
+
                 // Load error patterns
                 await this.loadErrorPatterns(sessionId);
-                
+
                 console.log('Loaded detailed progress for session:', sessionId);
             } else {
                 throw new Error(data.error || 'Failed to load session progress');
             }
-            
+
         } catch (error) {
             console.error('Failed to load session progress:', error);
             this.showError('Unable to load session details. Please try again.');
@@ -531,18 +542,18 @@ class TeacherDashboard {
     async loadErrorPatterns(sessionId) {
         try {
             const response = await fetch(`${this.apiBaseUrl}teacher/errors/${sessionId}`);
-            
+
             if (!response.ok) {
                 console.warn('Could not load error patterns');
                 return;
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.displayErrorPatterns(data.data);
             }
-            
+
         } catch (error) {
             console.warn('Failed to load error patterns:', error);
         }
@@ -628,7 +639,7 @@ class TeacherDashboard {
     showDetailView() {
         const sessionsSection = document.querySelector('.sessions-section');
         const detailSection = document.getElementById('progress-detail');
-        
+
         if (sessionsSection) sessionsSection.style.display = 'none';
         if (detailSection) detailSection.style.display = 'block';
     }
@@ -639,13 +650,13 @@ class TeacherDashboard {
     showSessionsOverview() {
         const sessionsSection = document.querySelector('.sessions-section');
         const detailSection = document.getElementById('progress-detail');
-        
+
         if (sessionsSection) sessionsSection.style.display = 'block';
         if (detailSection) detailSection.style.display = 'none';
-        
+
         this.currentSession = null;
         this.currentView = 'overview';
-        
+
         // Refresh sessions when returning to overview
         this.loadAllSessions();
     }
@@ -658,9 +669,9 @@ class TeacherDashboard {
             console.error('No session data provided to updateDetailView');
             return;
         }
-        
+
         console.log('📊 updateDetailView called with:', sessionData);
-        
+
         const sessionInfo = sessionData.session_info || {};
         const progressRecords = sessionData.progress || [];
         const analytics = sessionData.analytics || {};
@@ -676,16 +687,16 @@ class TeacherDashboard {
         let bestStreak = 0;
 
         const recordsArray = Array.isArray(progressRecords) ? progressRecords : progressRecords.levels || [];
-        
+
         if (recordsArray.length > 0) {
             recordsArray.forEach(record => {
-            totalWordsCompleted += record.words_completed || 0;
-            totalAttempts += record.total_attempts || 0;
-            totalCorrectAttempts += record.correct_attempts || 0;
-            totalTimeSpent += record.time_spent || 0;
-            currentLevel = Math.max(currentLevel, record.level || 1);
-            bestStreak = Math.max(bestStreak, record.best_streak || 0);
-        });
+                totalWordsCompleted += record.words_completed || 0;
+                totalAttempts += record.total_attempts || 0;
+                totalCorrectAttempts += record.correct_attempts || 0;
+                totalTimeSpent += record.time_spent || 0;
+                currentLevel = Math.max(currentLevel, record.level || 1);
+                bestStreak = Math.max(bestStreak, record.best_streak || 0);
+            });
         }
 
         console.log('📊 Calculated totals:', {
@@ -713,19 +724,19 @@ class TeacherDashboard {
             levelElement.textContent = currentLevel;
             console.log('✅ Updated level to:', currentLevel);
         }
-        
+
         if (wordsElement) {
             wordsElement.textContent = totalWordsCompleted;
             console.log('✅ Updated words completed to:', totalWordsCompleted);
         }
-        
+
         if (accuracyElement) {
-            const accuracy = totalAttempts > 0 ? 
+            const accuracy = totalAttempts > 0 ?
                 Math.round((totalCorrectAttempts / totalAttempts) * 100) : 0;
             accuracyElement.textContent = `${accuracy}%`;
             console.log('✅ Updated accuracy to:', `${accuracy}%`);
         }
-        
+
         if (timeElement) {
             const minutes = Math.round(totalTimeSpent / 60);
             timeElement.textContent = `${minutes} min`;
@@ -793,8 +804,17 @@ class TeacherDashboard {
         if (activeTodayElement) {
             const today = new Date().toDateString();
             const activeToday = this.sessions.filter(session => {
-                const lastPlayed = new Date(session.lastPlayed).toDateString();
-                return lastPlayed === today;
+                // Handle both possible field names for compatibility
+                const lastActiveDate = session.last_active || session.lastPlayed;
+                if (!lastActiveDate) return false;
+
+                try {
+                    const lastPlayed = new Date(lastActiveDate).toDateString();
+                    return lastPlayed === today;
+                } catch (error) {
+                    console.warn('Invalid date format for session:', session.session_id, lastActiveDate);
+                    return false;
+                }
             }).length;
             activeTodayElement.textContent = activeToday;
         }
@@ -922,19 +942,19 @@ class TeacherDashboard {
     async generateProgressCharts(sessionId) {
         try {
             const response = await fetch(`${this.apiBaseUrl}teacher/timeline/${sessionId}?days=7`);
-            
+
             if (!response.ok) {
                 console.warn('Could not load timeline data');
                 return;
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.displayProgressChart(data.data.timeline);
                 console.log('Progress chart generated for session:', sessionId);
             }
-            
+
         } catch (error) {
             console.warn('Failed to generate progress charts:', error);
             this.displayFallbackChart();
@@ -959,12 +979,12 @@ class TeacherDashboard {
         const maxAttempts = Math.max(...timelineData.map(day => day.total_attempts), 1);
 
         timelineData.forEach(day => {
-            const date = new Date(day.activity_date).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric' 
+            const date = new Date(day.activity_date).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
             });
             const percentage = (day.total_attempts / maxAttempts) * 100;
-            const accuracy = day.total_attempts > 0 ? 
+            const accuracy = day.total_attempts > 0 ?
                 Math.round((day.successful_attempts / day.total_attempts) * 100) : 0;
 
             chartHTML += `
@@ -1035,22 +1055,22 @@ class TeacherDashboard {
     async generatePrintableReport(sessionId, format = 'summary') {
         try {
             this.showLoading(true);
-            
+
             const response = await fetch(`${this.apiBaseUrl}teacher/report/${sessionId}?format=${format}`);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.displayPrintableReport(data.data);
                 console.log('Printable report generated:', format);
             } else {
                 throw new Error(data.error || 'Failed to generate report');
             }
-            
+
         } catch (error) {
             console.error('Failed to generate printable report:', error);
             this.showError('Unable to generate report. Please try again.');
@@ -1064,7 +1084,7 @@ class TeacherDashboard {
      */
     displayPrintableReport(reportData) {
         const reportWindow = window.open('', '_blank', 'width=800,height=600');
-        
+
         const reportHTML = `
             <!DOCTYPE html>
             <html>
@@ -1212,18 +1232,18 @@ class TeacherDashboard {
     async identifyCommonErrorPatterns() {
         try {
             const response = await fetch(`${this.apiBaseUrl}teacher/analytics/comparative`);
-            
+
             if (!response.ok) {
                 console.warn('Could not load comparative analytics');
                 return;
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.displayCommonErrorPatterns(data.data.common_error_patterns);
             }
-            
+
         } catch (error) {
             console.warn('Failed to identify common error patterns:', error);
         }
@@ -1235,7 +1255,7 @@ class TeacherDashboard {
     displayCommonErrorPatterns(errorPatterns) {
         // This could be displayed in a separate section or modal
         console.log('Common error patterns across all students:', errorPatterns);
-        
+
         // For now, we'll store this data for potential future display
         this.commonErrorPatterns = errorPatterns;
     }
@@ -1246,18 +1266,18 @@ class TeacherDashboard {
     async trackSessionActivity() {
         try {
             const response = await fetch(`${this.apiBaseUrl}teacher/analytics/activity`);
-            
+
             if (!response.ok) {
                 console.warn('Could not load activity data');
                 return;
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.updateActivityTracking(data.data);
             }
-            
+
         } catch (error) {
             console.warn('Failed to track session activity:', error);
         }
@@ -1288,10 +1308,10 @@ class TeacherDashboard {
      */
     async viewSessionProgressEnhanced(sessionId) {
         await this.viewSessionProgress(sessionId);
-        
+
         // Generate progress charts
         await this.generateProgressCharts(sessionId);
-        
+
         // Set up print report button
         const printReportBtn = document.getElementById('print-report-btn');
         if (printReportBtn) {
@@ -1307,10 +1327,10 @@ class TeacherDashboard {
     confirmDeleteStudent(sessionId, studentName) {
         this.pendingDeleteSessionId = sessionId;
         this.pendingDeleteStudentName = studentName;
-        
+
         const modal = document.getElementById('delete-student-modal');
         const nameElement = document.getElementById('delete-student-name');
-        
+
         if (modal && nameElement) {
             nameElement.textContent = studentName;
             modal.classList.add('show');
@@ -1340,7 +1360,7 @@ class TeacherDashboard {
 
         try {
             this.showLoading(true);
-            
+
             const response = await fetch(`${this.apiBaseUrl}teacher/delete/${this.pendingDeleteSessionId}`, {
                 method: 'DELETE',
                 headers: {
@@ -1370,14 +1390,14 @@ class TeacherDashboard {
                 // Hide modal and refresh sessions
                 this.hideDeleteStudentModal();
                 await this.loadAllSessions();
-                
+
             } else {
                 throw new Error(result.error || 'Failed to delete student');
             }
 
         } catch (error) {
             console.error('Failed to delete student:', error);
-            
+
             if (window.FrontendErrorHandler) {
                 window.FrontendErrorHandler.showUserFriendlyError(
                     'Delete failed',
@@ -1399,7 +1419,7 @@ class TeacherDashboard {
         const modal = document.getElementById('delete-all-modal');
         const confirmationInput = document.getElementById('delete-all-confirmation');
         const confirmBtn = document.getElementById('confirm-delete-all-btn');
-        
+
         if (modal) {
             // Reset confirmation input
             if (confirmationInput) {
@@ -1408,9 +1428,9 @@ class TeacherDashboard {
             if (confirmBtn) {
                 confirmBtn.disabled = true;
             }
-            
+
             modal.classList.add('show');
-            
+
             // Focus the confirmation input
             setTimeout(() => {
                 if (confirmationInput) {
@@ -1427,11 +1447,11 @@ class TeacherDashboard {
         const modal = document.getElementById('delete-all-modal');
         const confirmationInput = document.getElementById('delete-all-confirmation');
         const confirmBtn = document.getElementById('confirm-delete-all-btn');
-        
+
         if (modal) {
             modal.classList.remove('show');
         }
-        
+
         // Reset form
         if (confirmationInput) {
             confirmationInput.value = '';
@@ -1446,7 +1466,7 @@ class TeacherDashboard {
      */
     async deleteAllStudents() {
         const confirmationInput = document.getElementById('delete-all-confirmation');
-        
+
         if (confirmationInput && confirmationInput.value !== 'DELETE ALL') {
             if (window.FrontendErrorHandler) {
                 window.FrontendErrorHandler.showUserFriendlyError(
@@ -1460,7 +1480,7 @@ class TeacherDashboard {
 
         try {
             this.showLoading(true);
-            
+
             const response = await fetch(`${this.apiBaseUrl}teacher/delete-all`, {
                 method: 'DELETE',
                 headers: {
@@ -1490,23 +1510,49 @@ class TeacherDashboard {
 
                 // Hide modal and refresh sessions
                 this.hideDeleteAllModal();
-                await this.loadAllSessions();
-                
+
+                // Add a small delay before refreshing to ensure the delete operation is complete
+                setTimeout(async () => {
+                    try {
+                        await this.loadAllSessions();
+                    } catch (refreshError) {
+                        console.warn('Error refreshing sessions after delete, but delete was successful:', refreshError);
+                        // Throw a specific error to be caught by the outer catch block
+                        throw new Error('refresh_failed_after_successful_delete');
+                    }
+                }, 500);
+
             } else {
                 throw new Error(result.error || 'Failed to delete all students');
             }
 
         } catch (error) {
             console.error('Failed to delete all students:', error);
-            
-            if (window.FrontendErrorHandler) {
-                window.FrontendErrorHandler.showUserFriendlyError(
-                    'Delete all failed',
-                    error.message,
-                    'error'
-                );
+
+            // Check if the error occurred after a successful delete (during refresh)
+            if (error.message && (error.message.includes('refresh') || error.message.includes('refresh_failed_after_successful_delete'))) {
+                // The delete was successful, just the refresh failed
+                if (window.FrontendErrorHandler) {
+                    window.FrontendErrorHandler.showUserFriendlyError(
+                        'Students deleted successfully',
+                        'Refreshing page to show updated data...',
+                        'success',
+                        2000
+                    );
+                }
+                // Force page reload to show the empty state
+                setTimeout(() => window.location.reload(), 2000);
             } else {
-                this.showError('Failed to delete all students: ' + error.message);
+                // Actual delete operation failed
+                if (window.FrontendErrorHandler) {
+                    window.FrontendErrorHandler.showUserFriendlyError(
+                        'Delete all failed',
+                        error.message || 'Please try again.',
+                        'error'
+                    );
+                } else {
+                    this.showError('Failed to delete all students: ' + error.message);
+                }
             }
         } finally {
             this.showLoading(false);
