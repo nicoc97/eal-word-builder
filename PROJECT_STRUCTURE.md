@@ -14,30 +14,37 @@ This project has been reorganized for better maintainability and clarity.
 │   └── frontend/         # Frontend assets
 │       ├── css/          # Stylesheets
 │       └── js/           # JavaScript files
-├── public/               # Web-accessible files
-│   ├── index.html       # Landing page
-│   ├── game.html        # Main game interface
-│   ├── teacher.html     # Teacher dashboard
-│   └── ...              # Other HTML pages
+├── public/               # Development HTML files (organized)
 ├── tests/               # Test files
 ├── assets/              # Static assets
 │   └── images/          # Images and icons
 ├── deploy/              # Deployment configurations
-│   ├── docker-compose.yml
-│   ├── railway.json
-│   └── ...
 ├── docs/                # Documentation
 ├── data/                # Application data
-└── logs/                # Log files
+├── logs/                # Log files
+├── index.html           # Main entry point (for Railway)
+├── game.html            # Game interface (for Railway)
+└── teacher.html         # Teacher dashboard (for Railway)
 ```
+
+## Deployment Strategy
+
+**For Railway Production:**
+- Main HTML files are at root level for Railway's PHP server
+- Paths reference organized structure: `src/frontend/css/`, `src/backend/api/`
+
+**For Development:**
+- Organized HTML files available in `public/` directory
+- Same path structure works for both environments
 
 ## Path Updates Made
 
-- HTML files now reference CSS/JS with `../src/frontend/` prefix
-- API calls updated to use `../src/backend/api/` prefix
-- Image paths updated to use `../assets/images/` prefix
+- HTML files reference CSS/JS with `src/frontend/` prefix
+- API calls use `src/backend/api/` prefix  
+- Image paths use `assets/images/` prefix
 - PHP includes updated for new directory structure
 
 ## Running the Application
 
-The main entry point is still `public/index.html` but now all assets are properly organized and referenced.
+- **Production (Railway):** Serves from root, uses `index.html`
+- **Development:** Can use either root files or `public/` directory

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Builder - Choose Your Role</title>
+    <link rel="stylesheet" href="src/frontend/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container landing-page">
+        <!-- Header -->
+        <header class="game-header" role="banner">
+            <div class="header-content">
+                <h1 class="game-title">Word Builder</h1>
+                <p class="game-subtitle">Learn and Build Words Together</p>
+            </div>
+        </header>
+
+        <!-- Main Landing Content -->
+        <main class="landing-main" role="main">
+            <!-- Role Selection Section -->
+            <section class="role-selection-section" aria-label="Choose your role">
+                <h2 class="section-title">Choose Your Role</h2>
+                
+                <div class="role-cards-container">
+                    <!-- Teacher Card -->
+                    <div class="role-card teacher-card" role="button" tabindex="0" id="teacher-role-btn" 
+                         aria-label="Select teacher mode">
+                        <div class="role-icon">👩‍🏫</div>
+                        <h3 class="role-title">Teacher</h3>
+                        <p class="role-description">
+                            Create and manage student sessions. View progress reports and track learning analytics.
+                        </p>
+                        <div class="role-features">
+                            <ul>
+                                <li>Create student profiles</li>
+                                <li>Monitor progress</li>
+                                <li>View detailed reports</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Student Card -->
+                    <div class="role-card student-card" role="button" tabindex="0" id="student-role-btn" 
+                         aria-label="Select student mode">
+                        <div class="role-icon">🎓</div>
+                        <h3 class="role-title">Student</h3>
+                        <p class="role-description">
+                            Play the word building game and track your progress. Select your profile to continue learning.
+                        </p>
+                        <div class="role-features">
+                            <ul>
+                                <li>Interactive word building</li>
+                                <li>Track your progress</li>
+                                <li>Fun learning experience</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Documentation Buttons -->
+                <div class="documentation-buttons">
+                    <a href="how-to-use.html" class="btn btn-primary btn-small">
+                        📖 How to Use
+                    </a>
+                </div>
+            </section>
+
+            <!-- Student Selection Section (Hidden by default) -->
+            <section class="student-selection-section" id="student-selection" style="display: none;" 
+                     aria-label="Select student profile">
+                <div class="section-header">
+                    <h2 class="section-title">Select Your Profile</h2>
+                    <button class="btn btn-secondary" id="back-to-roles-btn" aria-label="Back to role selection">
+                        ← Back
+                    </button>
+                </div>
+                
+                <div class="student-profiles" id="student-profiles">
+                    <!-- Student profiles will be loaded dynamically -->
+                    <div class="no-students-message" id="no-students-message">
+                        <div class="message-icon">📚</div>
+                        <h3>No Student Profiles Found</h3>
+                        <p>Ask your teacher to create a student profile for you first.</p>
+                        <button class="btn btn-primary" id="go-to-teacher-btn">Go to Teacher Mode</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/frontend/js/error-handler.js"></script>
+    <script src="src/frontend/js/ui.js"></script>
+    <script src="src/frontend/js/landing.js"></script>
+    <script>
+        // Initialize the landing page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            window.landingPage = new LandingPage();
+        });
+    </script>
+</body>
+
+</html>

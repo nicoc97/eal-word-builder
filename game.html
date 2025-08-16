@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Builder Game</title>
+    <link rel="stylesheet" href="src/frontend/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="game-header" role="banner">
+            <div class="header-content">
+                <h1 class="game-title">Word Builder</h1>
+                <div class="header-controls">
+                    <button class="btn btn-secondary btn-small" id="sync-btn" aria-label="Sync progress"
+                        title="Sync progress with server">
+                        🔄
+                    </button>
+                    <button class="btn btn-secondary" id="teacher-btn" aria-label="Open teacher dashboard">
+                        Teacher View
+                    </button>
+                    <button class="btn btn-icon" id="settings-btn" aria-label="Game settings">
+                        ⚙️
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="game-main" role="main">
+            <!-- Progress Section -->
+            <section class="progress-section" aria-label="Game progress">
+                <div class="progress-container">
+                    <div class="level-indicator">
+                        <span class="level-label">Level</span>
+                        <span class="level-number" id="current-level">1</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+                            aria-valuemax="100">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <span class="progress-text" id="progress-text">0/10 words</span>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-label">Score</span>
+                        <span class="score-value" id="current-score">0</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Word Display Section -->
+            <section class="word-section" aria-label="Current word">
+                <div class="word-container">
+                    <div class="word-image-container">
+                        <img id="word-image" data-src="images/placeholder.svg" alt="Word image" class="word-image"
+                            loading="lazy" />
+                        <button class="pronunciation-btn" id="pronunciation-btn" aria-label="Play word pronunciation">
+                            🔊
+                        </button>
+                    </div>
+                    <div class="word-target" id="word-target" role="region"
+                        aria-label="Drop letters here to build the word">
+                        <!-- Letter slots will be dynamically generated -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Letter Tiles Section -->
+            <section class="letters-section" aria-label="Available letters">
+                <div class="letters-container" id="letters-container" role="region"
+                    aria-label="Drag these letters to build the word">
+                    <!-- Letter tiles will be dynamically generated -->
+                </div>
+            </section>
+
+            <!-- Game Controls -->
+            <section class="controls-section">
+                <div class="controls-container">
+                    <button class="btn btn-primary" id="check-word-btn" disabled aria-label="Check if word is correct">
+                        Check Word
+                    </button>
+                    <button class="btn btn-secondary" id="clear-word-btn" aria-label="Clear current word">
+                        Clear
+                    </button>
+                    <button class="btn btn-secondary" id="hint-btn" aria-label="Get a hint">
+                        Hint
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Feedback Modal -->
+        <div class="modal-overlay" id="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+            <div class="modal-content">
+                <h2 id="feedback-title" class="feedback-title"></h2>
+                <p id="feedback-message" class="feedback-message"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="continue-btn">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+            <div class="modal-content settings-modal-content">
+                <div class="modal-header">
+                    <h2 id="settings-title" class="modal-title">Audio Settings</h2>
+                    <button class="btn btn-icon modal-close" id="settings-close-btn" aria-label="Close settings">
+                        ✕
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>Audio Controls</h3>
+
+                        <div class="setting-item">
+                            <label for="audio-enabled" class="setting-label">
+                                <input type="checkbox" id="audio-enabled" checked>
+                                Enable Audio
+                            </label>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="master-volume" class="setting-label">Master Volume</label>
+                            <div class="volume-control">
+                                <input type="range" id="master-volume" min="0" max="100" value="100"
+                                    class="volume-slider">
+                                <span class="volume-value" id="master-volume-value">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="speech-volume" class="setting-label">Speech Volume</label>
+                            <div class="volume-control">
+                                <input type="range" id="speech-volume" min="0" max="100" value="100"
+                                    class="volume-slider">
+                                <span class="volume-value" id="speech-volume-value">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="effects-volume" class="setting-label">Sound Effects Volume</label>
+                            <div class="volume-control">
+                                <input type="range" id="effects-volume" min="0" max="100" value="70"
+                                    class="volume-slider">
+                                <span class="volume-value" id="effects-volume-value">70%</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="speech-rate" class="setting-label">Speech Speed</label>
+                            <div class="volume-control">
+                                <input type="range" id="speech-rate" min="50" max="150" value="80"
+                                    class="volume-slider">
+                                <span class="volume-value" id="speech-rate-value">Normal</span>
+                            </div>
+                        </div>
+
+
+                        <div class="setting-item">
+                            <button class="btn btn-secondary" id="test-audio-btn">Test Audio</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="settings-save-btn">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/frontend/js/error-handler.js"></script>
+    <script src="src/frontend/js/emoji-mapper.js"></script>
+    <script src="src/frontend/js/touch-handler.js"></script>
+    <script src="src/frontend/js/responsive-tester.js"></script>
+    <script src="src/frontend/js/orientation-handler.js"></script>
+    <script src="src/frontend/js/performance-optimizer.js"></script>
+    <script src="src/frontend/js/ui.js"></script>
+    <script src="src/frontend/js/audio.js"></script>
+    <script src="src/frontend/js/progress.js"></script>
+    <script src="src/frontend/js/game.js"></script>
+    <script>
+        // Initialize the game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Ensure loading overlay is hidden on page load
+            setTimeout(() => {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay && !window.game) {
+                    console.warn('Game failed to initialize, hiding loading overlay');
+                    loadingOverlay.style.display = 'none';
+                    loadingOverlay.setAttribute('aria-hidden', 'true');
+                }
+            }, 10000); // 10 second safety timeout
+            
+            window.game = new WordBuilderGame('app-container');
+        });
+    </script>
+</body>
+
+</html>

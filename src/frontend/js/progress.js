@@ -252,10 +252,10 @@ class ProgressTracker {
     getApiBaseUrl() {
         // If we're running on localhost:8000, use relative path
         if (window.location.port === '8000' || window.location.href.includes('localhost:8000')) {
-            return '../src/backend/api/';
+            return 'src/backend/api/';
         }
         // If we're on Railway production, use relative path
-        return '../src/backend/api/';
+        return 'src/backend/api/';
     }
 
     /**
