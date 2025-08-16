@@ -29,8 +29,8 @@ class WordManager {
      * Constructor - Initialize word data paths
      */
     public function __construct() {
-        $this->wordDataPath = __DIR__ . '/../data/words/';
-        $this->imageBasePath = '/images/words/';
+        $this->wordDataPath = __DIR__ . '/../../../data/words/';
+        $this->imageBasePath = '/assets/images/words/';
         
         // Ensure word data directory exists
         if (!is_dir($this->wordDataPath)) {

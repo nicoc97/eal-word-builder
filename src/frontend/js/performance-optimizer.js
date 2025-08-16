@@ -405,7 +405,7 @@ class PerformanceOptimizer {
      * Preload next level resources
      */
     preloadNextLevel(level) {
-        const nextLevelUrl = `api/words/${level}`;
+        const nextLevelUrl = `../src/backend/api/words/${level}`;
         
         if (!this.loadedResources.has(nextLevelUrl)) {
             fetch(nextLevelUrl)
@@ -590,7 +590,7 @@ class PerformanceOptimizer {
         try {
             // Test API response time
             const startTime = performance.now();
-            const response = await fetch('api/words/1');
+            const response = await fetch('../src/backend/api/words/1');
             const endTime = performance.now();
             
             const responseTime = endTime - startTime;

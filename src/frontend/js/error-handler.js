@@ -550,11 +550,11 @@ class FrontendErrorHandler {
             ...this.fallbackData,
             words: {
                 1: [
-                    { word: 'cat', image: 'images/placeholder.svg', phonetic: '/kæt/', difficulty: 1, category: 'animals' },
-                    { word: 'dog', image: 'images/placeholder.svg', phonetic: '/dɒɡ/', difficulty: 1, category: 'animals' },
-                    { word: 'pen', image: 'images/placeholder.svg', phonetic: '/pen/', difficulty: 1, category: 'objects' },
-                    { word: 'sun', image: 'images/placeholder.svg', phonetic: '/sʌn/', difficulty: 1, category: 'nature' },
-                    { word: 'hat', image: 'images/placeholder.svg', phonetic: '/hæt/', difficulty: 1, category: 'objects' }
+                    { word: 'cat', image: '../assets/images/placeholder.svg', phonetic: '/kæt/', difficulty: 1, category: 'animals' },
+                    { word: 'dog', image: '../assets/images/placeholder.svg', phonetic: '/dɒɡ/', difficulty: 1, category: 'animals' },
+                    { word: 'pen', image: '../assets/images/placeholder.svg', phonetic: '/pen/', difficulty: 1, category: 'objects' },
+                    { word: 'sun', image: '../assets/images/placeholder.svg', phonetic: '/sʌn/', difficulty: 1, category: 'nature' },
+                    { word: 'hat', image: '../assets/images/placeholder.svg', phonetic: '/hæt/', difficulty: 1, category: 'objects' }
                 ]
             },
             levels: [
